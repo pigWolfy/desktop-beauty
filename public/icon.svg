@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B7355"/>
+      <stop offset="100%" style="stop-color:#5D4E37"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560"/>
+      <stop offset="100%" style="stop-color:#0077b6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="128" height="128" rx="24" fill="url(#bgGrad)"/>
+  
+  <!-- 装饰光环 -->
+  <circle cx="64" cy="68" r="42" fill="none" stroke="url(#accentGrad)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- 几维鸟身体 - 圆润的椭圆形 -->
+  <ellipse cx="58" cy="72" rx="30" ry="28" fill="url(#bodyGrad)"/>
+  
+  <!-- 身体羽毛纹理 -->
+  <ellipse cx="58" cy="72" rx="26" ry="24" fill="none" stroke="#6B5344" stroke-width="1" opacity="0.5"/>
+  <ellipse cx="58" cy="72" rx="20" ry="18" fill="none" stroke="#6B5344" stroke-width="1" opacity="0.3"/>
+  
+  <!-- 几维鸟头部 -->
+  <circle cx="75" cy="52" r="18" fill="url(#bodyGrad)"/>
+  
+  <!-- 长喙 - 几维鸟的标志性特征 -->
+  <path d="M88 54 Q108 56 112 58 Q108 60 88 58 Q86 56 88 54" fill="#4A4A4A"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="80" cy="48" r="4" fill="#1a1a2e"/>
+  <circle cx="81" cy="47" r="1.5" fill="white"/>
+  
+  <!-- 小腿和脚 -->
+  <path d="M45 95 L42 108 M50 95 L50 108 M42 108 L38 111 M42 108 L46 111 M50 108 L46 111 M50 108 L54 111" 
+        stroke="#5D4E37" stroke-width="3" stroke-linecap="round" fill="none"/>
+  
+  <!-- 翅膀（几维鸟的翅膀很小） -->
+  <ellipse cx="40" cy="68" rx="8" ry="12" fill="#7A6B5A" opacity="0.6"/>
+</svg>

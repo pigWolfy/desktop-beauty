@@ -1,0 +1,210 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+body {
+  background: $bg-primary;
+  color: $text-primary;
+  overflow: hidden;
+}
+
+// 全局滚动条样式
+* {
+  @include scrollbar;
+}
+
+// 链接样式
+a {
+  color: $accent-primary;
+  text-decoration: none;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: color.adjust($accent-primary, $lightness: 10%);
+  }
+}
+
+// 按钮基础样式
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+// 输入框基础样式
+input, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+// 通用卡片样式
+.card {
+  background: $bg-card;
+  border-radius: $border-radius;
+  padding: 20px;
+  @include hover-lift;
+}
+
+// 通用按钮样式
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: $border-radius-sm;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all $transition-fast;
+  cursor: pointer;
+
+  &-primary {
+    background: $accent-gradient;
+    color: white;
+
+    &:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+  }
+
+  &-secondary {
+    background: $bg-hover;
+    color: $text-primary;
+    border: 1px solid $border-color;
+
+    &:hover {
+      background: color.adjust($bg-hover, $lightness: 5%);
+    }
+  }
+
+  &-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 18px;
+  }
+}
+
+// 页面标题
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  background: $accent-gradient;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// 段落标题
+.section-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  color: $text-primary;
+}
+
+// 网格布局
+.grid {
+  display: grid;
+  gap: 20px;
+
+  &-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  &-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  &-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  &-auto {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+// Flex 布局工具类
+.flex {
+  display: flex;
+
+  &-center {
+    align-items: center;
+    justify-content: center;
+  }
+
+  &-between {
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &-col {
+    flex-direction: column;
+  }
+
+  &-wrap {
+    flex-wrap: wrap;
+  }
+}
+
+.gap-sm { gap: 8px; }
+.gap-md { gap: 16px; }
+.gap-lg { gap: 24px; }
+
+// 边距工具类
+.mt-sm { margin-top: 8px; }
+.mt-md { margin-top: 16px; }
+.mt-lg { margin-top: 24px; }
+.mb-sm { margin-bottom: 8px; }
+.mb-md { margin-bottom: 16px; }
+.mb-lg { margin-bottom: 24px; }
+
+// 动画
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn $transition-normal;
+}
+
+.animate-slideUp {
+  animation: slideUp $transition-normal;
+}

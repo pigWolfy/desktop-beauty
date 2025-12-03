@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Beauty 遥测仪表盘</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; }
+        .card { background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Desktop Beauty 数据中心</h1>
+                <p class="text-gray-500 mt-1">实时监控应用使用情况</p>
+            </div>
+            <button onclick="loadData()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                🔄 刷新数据
+            </button>
+        </header>
+
+        <!-- 概览卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="card border-l-4 border-blue-500">
+                <h3 class="text-gray-500 text-sm font-medium">总用户数</h3>
+                <p class="text-3xl font-bold text-gray-900 mt-2" id="totalUsers">-</p>
+            </div>
+            <div class="card border-l-4 border-green-500">
+                <h3 class="text-gray-500 text-sm font-medium">今日活跃</h3>
+                <p class="text-3xl font-bold text-gray-900 mt-2" id="activeUsers">-</p>
+            </div>
+            <div class="card border-l-4 border-purple-500">
+                <h3 class="text-gray-500 text-sm font-medium">总事件数</h3>
+                <p class="text-3xl font-bold text-gray-900 mt-2" id="totalEvents">-</p>
+            </div>
+            <div class="card border-l-4 border-yellow-500">
+                <h3 class="text-gray-500 text-sm font-medium">版本分布</h3>
+                <p class="text-lg font-bold text-gray-900 mt-2" id="topVersion">-</p>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-lg font-bold mb-4">功能使用排行</h3>
+                <canvas id="eventsChart"></canvas>
+            </div>
+            <div class="card">
+                <h3 class="text-lg font-bold mb-4">页面访问热度</h3>
+                <canvas id="pagesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 最近日志 -->
+        <div class="card">
+            <h3 class="text-lg font-bold mb-4">最近 20 条日志</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">类型</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">详情</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">版本</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="logsTable">
+                        <!-- 日志数据将插入这里 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventsChart = null;
+        let pagesChart = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                const data = await response.json();
+                
+                // 更新概览
+                document.getElementById('totalUsers').textContent = data.totalUsers;
+                document.getElementById('activeUsers').textContent = data.activeUsersToday;
+                document.getElementById('totalEvents').textContent = data.totalEvents;
+                document.getElementById('topVersion').textContent = data.topVersion || 'N/A';
+
+                // 更新图表 - 事件分布
+                updateChart('eventsChart', '功能使用', data.eventStats, 'bar');
+                
+                // 更新图表 - 页面访问
+                updateChart('pagesChart', '页面访问', data.pageStats, 'doughnut');
+
+                // 更新日志表格
+                const tbody = document.getElementById('logsTable');
+                tbody.innerHTML = data.recentLogs.map(log => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(log.serverTimestamp).toLocaleString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${log.userId.substring(0, 8)}...</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${log.category ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}">
+                                ${log.category ? 'Event' : 'Page'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${log.category ? `${log.category} - ${log.action}` : log.path}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${log.appVersion}</td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                alert('加载数据失败，请检查服务器状态');
+            }
+        }
+
+        function updateChart(canvasId, label, dataObj, type) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const labels = Object.keys(dataObj);
+            const values = Object.values(dataObj);
+            
+            // 销毁旧图表
+            if (canvasId === 'eventsChart' && eventsChart) eventsChart.destroy();
+            if (canvasId === 'pagesChart' && pagesChart) pagesChart.destroy();
+
+            const config = {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: values,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.5)',
+                            'rgba(16, 185, 129, 0.5)',
+                            'rgba(245, 158, 11, 0.5)',
+                            'rgba(239, 68, 68, 0.5)',
+                            'rgba(139, 92, 246, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(16, 185, 129)',
+                            'rgb(245, 158, 11)',
+                            'rgb(239, 68, 68)',
+                            'rgb(139, 92, 246)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            };
+
+            const chart = new Chart(ctx, config);
+            if (canvasId === 'eventsChart') eventsChart = chart;
+            if (canvasId === 'pagesChart') pagesChart = chart;
+        }
+
+        // 初始加载
+        loadData();
+    </script>
+</body>
+</html>

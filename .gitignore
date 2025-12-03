@@ -1,0 +1,9 @@
+node_modules
+dist
+release
+build
+*.zip
+*.log
+.DS_Store
+.env
+.vscode
