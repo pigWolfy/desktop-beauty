@@ -26,7 +26,12 @@
 - **桌面整理**：一键整理桌面图标，保持桌面整洁。
 - **驱动管理**：简单的驱动状态查看与管理。
 
-### 5. ☁️ 智能服务
+### 5. 🧩 桌面小组件 (New!)
+- **透明悬浮条**：极简设计的桌面悬浮组件，采用毛玻璃 (Glassmorphism) 特效，完美融入桌面。
+- **快捷交互**：无需打开主界面即可一键切换壁纸、执行桌面整理或快速唤起主程序。
+- **个性化设置**：支持透明度调节与位置记忆，提供不打扰的贴心体验。
+
+### 6. ☁️ 智能服务
 - **自动更新**：后台静默下载更新，重启即用最新版本。
 - **数据仪表盘**：内置遥测系统，开发者可实时查看应用活跃度（已脱敏）。
 
@@ -44,12 +49,15 @@
 ![Driver](docs/images/driver.png)
 ![Settings](docs/images/settings.png)
 
+### 🧩 桌面小组件
+![Desktop Widget](docs/images/desktop_widget.png)
+
 ## 🛠️ 技术栈
 
 - **核心框架**: [Electron](https://www.electronjs.org/)
 - **前端框架**: [Vue 3](https://vuejs.org/) + [TypeScript](https://www.typescriptlang.org/)
 - **构建工具**: [Vite](https://vitejs.dev/)
-- **状态管理**: [Pinia](https://pinia.vuejs.org/)
+- **状态管理**: [Pinia](https://pinia.vuejs.org/) + [electron-store](https://github.com/sindresorhus/electron-store) (持久化存储)
 - **UI 样式**: SCSS + 自定义组件库
 - **后端服务**: Node.js + Express (用于遥测和更新服务)
 

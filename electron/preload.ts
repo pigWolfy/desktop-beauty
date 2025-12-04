@@ -2,10 +2,15 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 // 暴露给渲染进程的 API
 contextBridge.exposeInMainWorld('electronAPI', {
+  // 设置管理
+  getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
+  setAppSettings: (settings: any) => ipcRenderer.invoke('set-app-settings', settings),
+
   // 窗口控制
   windowMinimize: () => ipcRenderer.send('window-minimize'),
   windowMaximize: () => ipcRenderer.send('window-maximize'),
   windowClose: () => ipcRenderer.send('window-close'),
+  openMainWindow: () => ipcRenderer.send('open-main-window'),
 
   // 桌面图标管理
   getDesktopIcons: () => ipcRenderer.invoke('get-desktop-icons'),
@@ -18,6 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 壁纸管理
   getWallpapers: () => ipcRenderer.invoke('get-wallpapers'),
   setWallpaper: (path: string) => ipcRenderer.invoke('set-wallpaper', path),
+  nextWallpaper: () => ipcRenderer.invoke('next-wallpaper'),
   addWallpaper: (path: string) => ipcRenderer.invoke('add-wallpaper', path),
   removeWallpaper: (path: string) => ipcRenderer.invoke('remove-wallpaper', path),
   startWallpaperSlideshow: (interval: number) => ipcRenderer.invoke('start-wallpaper-slideshow', interval),

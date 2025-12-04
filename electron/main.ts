@@ -12,14 +12,17 @@ import * as DriverManager from './services/driverManager'
 import * as CpuHealthChecker from './services/cpuHealthChecker'
 import { TelemetryService } from './services/telemetry'
 import { UpdateService } from './services/updater'
+import { SettingsManager } from './services/settingsManager'
 
 // Vite 开发服务器 URL（由 vite-plugin-electron 注入）
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 
 let mainWindow: BrowserWindow | null = null
+let widgetWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 
 // 服务实例
+const settingsManager = new SettingsManager()
 const desktopManager = new DesktopManager()
 const wallpaperManager = new WallpaperManager()
 const systemMonitor = new SystemMonitor()
@@ -30,7 +33,44 @@ const autoWallpaperService = new AutoWallpaperService(onlineWallpaperService)
 const telemetryService = new TelemetryService()
 let updateService: UpdateService | null = null
 
+function createWidgetWindow() {
+  if (widgetWindow) return
+
+  widgetWindow = new BrowserWindow({
+    width: 220,
+    height: 60,
+    type: 'toolbar',
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    webPreferences: {
+      preload: join(__dirname, '../preload/preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: true
+    }
+  })
+
+  // Position it at top center
+  const { width } = screen.getPrimaryDisplay().workAreaSize
+  widgetWindow.setPosition(Math.round(width / 2 - 110), 100)
+
+  if (VITE_DEV_SERVER_URL) {
+    widgetWindow.loadURL(`${VITE_DEV_SERVER_URL}#/widget`)
+  } else {
+    widgetWindow.loadFile(join(__dirname, '../index.html'), { hash: 'widget' })
+  }
+
+  widgetWindow.on('closed', () => {
+    widgetWindow = null
+  })
+}
+
 function createWindow() {
+  const startMinimized = settingsManager.getSetting('startMinimized')
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -39,13 +79,14 @@ function createWindow() {
     frame: false,
     transparent: false,
     backgroundColor: '#1a1a2e',
+    show: !startMinimized,
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: true
     },
-    icon: join(__dirname, '../../public/icon.png')
+    icon: join(__dirname, '../../public/icon.ico')
   })
 
   // 开发环境加载本地服务，生产环境加载打包文件
@@ -68,7 +109,7 @@ function createWindow() {
 
   // 最小化到托盘
   mainWindow.on('close', (event) => {
-    if (!app.isQuiting) {
+    if (!app.isQuiting && settingsManager.getSetting('minimizeToTray')) {
       event.preventDefault()
       mainWindow?.hide()
     }
@@ -76,12 +117,21 @@ function createWindow() {
 }
 
 function createTray() {
-  const icon = nativeImage.createFromPath(join(__dirname, '../../public/icon.png'))
+  const icon = nativeImage.createFromPath(join(__dirname, '../../public/icon.ico'))
   tray = new Tray(icon.resize({ width: 16, height: 16 }))
   
   const contextMenu = Menu.buildFromTemplate([
     { label: '显示主窗口', click: () => mainWindow?.show() },
-    { label: '整理桌面', click: () => desktopManager.organizeDesktop() },
+    { 
+      label: '整理桌面', 
+      click: () => {
+        const settings = settingsManager.getSettings()
+        desktopManager.organizeDesktop({
+          sortBy: settings.defaultSort,
+          groupBy: settings.autoGroup ? 'type' : 'none'
+        })
+      } 
+    },
     { label: '切换壁纸', click: () => wallpaperManager.nextWallpaper() },
     { type: 'separator' },
     { 
@@ -142,6 +192,20 @@ async function downloadAndApplyWallpaper(downloadUrl: string): Promise<string | 
 }
 
 function setupIPC() {
+  // 设置管理
+  ipcMain.handle('get-app-settings', () => settingsManager.getSettings())
+  ipcMain.handle('set-app-settings', (_, settings) => {
+    settingsManager.setSettings(settings)
+    // Handle widget visibility
+    if (settings.showWidget !== undefined) {
+      if (settings.showWidget) {
+        createWidgetWindow()
+      } else {
+        widgetWindow?.close()
+      }
+    }
+  })
+
   // 窗口控制
   ipcMain.on('window-minimize', () => mainWindow?.minimize())
   ipcMain.on('window-maximize', () => {
@@ -152,6 +216,7 @@ function setupIPC() {
     }
   })
   ipcMain.on('window-close', () => mainWindow?.hide())
+  ipcMain.on('open-main-window', () => mainWindow?.show())
 
   // 桌面图标管理
   ipcMain.handle('get-desktop-icons', () => desktopManager.getDesktopIcons())
@@ -164,6 +229,7 @@ function setupIPC() {
   // 壁纸管理
   ipcMain.handle('get-wallpapers', () => wallpaperManager.getWallpapers())
   ipcMain.handle('set-wallpaper', (_, path) => wallpaperManager.setWallpaper(path))
+  ipcMain.handle('next-wallpaper', () => wallpaperManager.nextWallpaper())
   ipcMain.handle('add-wallpaper', (_, path) => wallpaperManager.addWallpaper(path))
   ipcMain.handle('remove-wallpaper', (_, path) => wallpaperManager.removeWallpaper(path))
   ipcMain.handle('start-wallpaper-slideshow', (_, interval) => wallpaperManager.startSlideshow(interval))
@@ -568,6 +634,9 @@ app.whenReady().then(() => {
   
   createWindow()
   createTray()
+  if (settingsManager.getSetting('showWidget')) {
+    createWidgetWindow()
+  }
   registerShortcuts()
   setupIPC()
   

@@ -36,6 +36,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/SettingsView.vue')
+    },
+    {
+      path: '/widget',
+      name: 'widget',
+      component: () => import('@/views/WidgetView.vue')
     }
   ]
 })

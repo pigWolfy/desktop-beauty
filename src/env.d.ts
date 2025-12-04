@@ -35,10 +35,15 @@ interface AutoWallpaperStatus {
 }
 
 interface ElectronAPI {
+  // 设置管理
+  getAppSettings: () => Promise<any>
+  setAppSettings: (settings: any) => Promise<void>
+
   // 窗口控制
   windowMinimize: () => void
   windowMaximize: () => void
   windowClose: () => void
+  openMainWindow: () => void
 
   // 桌面图标管理
   getDesktopIcons: () => Promise<any[]>
@@ -50,6 +55,7 @@ interface ElectronAPI {
   // 壁纸管理
   getWallpapers: () => Promise<any[]>
   setWallpaper: (path: string) => Promise<boolean>
+  nextWallpaper: () => Promise<boolean>
   addWallpaper: (path?: string) => Promise<string | null>
   removeWallpaper: (path: string) => Promise<boolean>
   startWallpaperSlideshow: (interval: number) => Promise<boolean>

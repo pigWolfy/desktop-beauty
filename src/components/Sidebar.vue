@@ -13,7 +13,7 @@
       </router-link>
     </div>
 
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" v-if="settings.showSidebarStats">
       <div class="quick-stats">
         <div class="stat-item">
           <span class="stat-icon">💻</span>
@@ -31,7 +31,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useSettingsStore } from '../stores/settings'
+import { storeToRefs } from 'pinia'
+
+const settingsStore = useSettingsStore()
+const { settings } = storeToRefs(settingsStore)
 
 const navItems = [
   { path: '/desktop', name: '桌面管理', icon: '🖥️' },
@@ -45,9 +50,11 @@ const navItems = [
 const cpuUsage = ref(0)
 const memoryUsage = ref(0)
 
-let refreshTimer: number
+let refreshTimer: number | undefined
 
 const updateStats = async () => {
+  if (!settings.value.showSidebarStats) return
+  
   try {
     const [cpu, memory] = await Promise.all([
       window.electronAPI?.getCpuUsage(),
@@ -61,14 +68,32 @@ const updateStats = async () => {
   }
 }
 
-onMounted(() => {
-  updateStats()
-  refreshTimer = window.setInterval(updateStats, 3000)
+const startTimer = () => {
+  stopTimer()
+  if (settings.value.showSidebarStats) {
+    updateStats()
+    refreshTimer = window.setInterval(updateStats, settings.value.monitorInterval)
+  }
+}
+
+const stopTimer = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = undefined
+  }
+}
+
+onMounted(async () => {
+  await settingsStore.init()
+  startTimer()
 })
 
 onUnmounted(() => {
-  clearInterval(refreshTimer)
+  stopTimer()
 })
+
+watch(() => settings.value.monitorInterval, startTimer)
+watch(() => settings.value.showSidebarStats, startTimer)
 </script>
 
 <style lang="scss" scoped>

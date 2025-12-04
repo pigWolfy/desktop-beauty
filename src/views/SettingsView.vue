@@ -38,6 +38,17 @@
             <span class="slider"></span>
           </label>
         </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">桌面小组件</span>
+            <span class="setting-desc">在桌面上显示快捷操作小组件</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" v-model="settings.showWidget">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -161,6 +172,10 @@
         <h2>Desktop Beauty</h2>
         <p class="version">版本 1.0.0</p>
         <p class="desc">一个优雅的桌面管理工具</p>
+        <div class="developer-info">
+          <p>开发者：<a href="#" @click.prevent="openAuthorGithub">pigWolfy</a></p>
+          <p>邮箱：happywangruifei@gmail.com</p>
+        </div>
         <div class="about-links">
           <a href="#" @click.prevent="openGithub">GitHub</a>
           <span>·</span>
@@ -173,26 +188,27 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { onMounted } from 'vue'
+import { useSettingsStore } from '../stores/settings'
+import { storeToRefs } from 'pinia'
 
-const settings = reactive({
-  autoStart: false,
-  minimizeToTray: true,
-  startMinimized: false,
-  defaultSort: 'type',
-  autoGroup: true,
-  wallpaperSlideshow: false,
-  wallpaperInterval: 30,
-  monitorInterval: 2000,
-  showSidebarStats: true
+const settingsStore = useSettingsStore()
+const { settings } = storeToRefs(settingsStore)
+
+onMounted(() => {
+  settingsStore.init()
 })
 
 const openGithub = () => {
-  window.electronAPI?.openExternal('https://github.com')
+  window.electronAPI?.openExternal('https://github.com/pigWolfy/desktop-beauty')
 }
 
 const openFeedback = () => {
-  window.electronAPI?.openExternal('https://github.com')
+  window.electronAPI?.openExternal('https://github.com/pigWolfy/desktop-beauty/issues')
+}
+
+const openAuthorGithub = () => {
+  window.electronAPI?.openExternal('https://github.com/pigWolfy')
 }
 </script>
 
@@ -336,6 +352,25 @@ const openFeedback = () => {
     font-size: 14px;
     color: $text-secondary;
     margin-top: 4px;
+  }
+
+  .developer-info {
+    margin-top: 16px;
+    font-size: 14px;
+    color: $text-secondary;
+    
+    p {
+      margin: 4px 0;
+    }
+
+    a {
+      color: $accent-primary;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   .about-links {

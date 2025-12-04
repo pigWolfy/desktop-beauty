@@ -1,5 +1,11 @@
 <template>
-  <div class="app-container">
+  <!-- Widget Mode -->
+  <div v-if="route.path === '/widget'" class="widget-mode">
+    <router-view />
+  </div>
+
+  <!-- Main App Mode -->
+  <div v-else class="app-container">
     <!-- 自定义标题栏 -->
     <TitleBar />
     
@@ -88,5 +94,12 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.widget-mode {
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
 }
 </style>
