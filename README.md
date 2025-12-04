@@ -30,6 +30,16 @@
 - **自动更新**：后台静默下载更新，重启即用最新版本。
 - **数据仪表盘**：内置遥测系统，开发者可实时查看应用活跃度（已脱敏）。
 
+## 📸 界面预览
+
+| 主页预览 | 壁纸中心 |
+| :---: | :---: |
+| ![Home](docs/images/home.png) | ![Wallpaper](docs/images/wallpaper.png) |
+| **系统监控** | **CPU 健康检测** |
+| ![Monitor](docs/images/monitor.png) | ![CPU Health](docs/images/cpuhealth.png) |
+| **驱动管理** | **设置界面** |
+| ![Driver](docs/images/driver.png) | ![Settings](docs/images/settings.png) |
+
 ## 🛠️ 技术栈
 
 - **核心框架**: [Electron](https://www.electronjs.org/)
