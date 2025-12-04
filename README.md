@@ -24,7 +24,6 @@
 ### 4. 🚀 效率工具
 - **快捷启动器**：`Alt + Space` 呼出极速启动器，快速打开应用或文件。
 - **桌面整理**：一键整理桌面图标，保持桌面整洁。
-- **驱动管理**：简单的驱动状态查看与管理。
 
 ### 5. 🧩 桌面小组件 (New!)
 - **透明悬浮条**：极简设计的桌面悬浮组件，采用毛玻璃 (Glassmorphism) 特效，完美融入桌面。
@@ -45,8 +44,7 @@
 ![Monitor](docs/images/monitor.png)
 ![CPU Health](docs/images/cpuhealth.png)
 
-### 🛡️ 驱动管理 & 设置
-![Driver](docs/images/driver.png)
+### ⚙️ 设置
 ![Settings](docs/images/settings.png)
 
 ### 🧩 桌面小组件

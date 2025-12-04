@@ -96,29 +96,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateDownloaded: (callback: (event: any, info: any) => void) => ipcRenderer.on('update-downloaded', callback),
   onUpdateError: (callback: (event: any, error: any) => void) => ipcRenderer.on('update-error', callback),
 
-  // 驱动管理
-  getAllDrivers: () => ipcRenderer.invoke('get-all-drivers'),
-  scanDriversStreaming: () => ipcRenderer.invoke('scan-drivers-streaming'),
-  onDriverScanProgress: (callback: (data: { current: number; total: number; drivers: any[] }) => void) => {
-    ipcRenderer.on('driver-scan-progress', (_, data) => callback(data))
-  },
-  onDriverScanComplete: (callback: (data: { total: number }) => void) => {
-    ipcRenderer.on('driver-scan-complete', (_, data) => callback(data))
-  },
-  removeDriverScanListeners: () => {
-    ipcRenderer.removeAllListeners('driver-scan-progress')
-    ipcRenderer.removeAllListeners('driver-scan-complete')
-  },
-  getProblematicDrivers: () => ipcRenderer.invoke('get-problematic-drivers'),
-  getDriversByCategory: () => ipcRenderer.invoke('get-drivers-by-category'),
-  getDriverStats: () => ipcRenderer.invoke('get-driver-stats'),
-  checkDriverUpdates: () => ipcRenderer.invoke('check-driver-updates'),
-  installDriverUpdate: (driverTitle: string) => ipcRenderer.invoke('install-driver-update', driverTitle),
-  scanForHardwareChanges: () => ipcRenderer.invoke('scan-hardware-changes'),
-  exportDrivers: () => ipcRenderer.invoke('export-drivers'),
-  disableDevice: (deviceId: string) => ipcRenderer.invoke('disable-device', deviceId),
-  enableDevice: (deviceId: string) => ipcRenderer.invoke('enable-device', deviceId),
-
   // CPU健康检测（Intel 13/14代缩缸问题）
   cpuHealthCheck: () => ipcRenderer.invoke('cpu-health-check'),
   getCpuInfo: () => ipcRenderer.invoke('get-cpu-info'),

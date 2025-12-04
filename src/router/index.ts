@@ -23,11 +23,6 @@ const router = createRouter({
       component: () => import('@/views/MonitorView.vue')
     },
     {
-      path: '/driver',
-      name: 'driver',
-      component: () => import('@/views/DriverView.vue')
-    },
-    {
       path: '/cpu-health',
       name: 'cpu-health',
       component: () => import('@/views/CpuHealthView.vue')

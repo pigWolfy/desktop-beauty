@@ -8,7 +8,6 @@ import { SystemMonitor } from './services/systemMonitor'
 import { AppLauncher } from './services/appLauncher'
 import { LiveWallpaperManager } from './services/liveWallpaper'
 import { OnlineWallpaperService, AutoWallpaperService } from './services/onlineWallpaper'
-import * as DriverManager from './services/driverManager'
 import * as CpuHealthChecker from './services/cpuHealthChecker'
 import { TelemetryService } from './services/telemetry'
 import { UpdateService } from './services/updater'
@@ -248,86 +247,6 @@ function setupIPC() {
   ipcMain.handle('get-memory-usage', () => systemMonitor.getMemoryUsage())
   ipcMain.handle('get-disk-usage', () => systemMonitor.getDiskUsage())
   ipcMain.handle('get-network-stats', () => systemMonitor.getNetworkStats())
-
-  // 驱动管理
-  ipcMain.handle('get-all-drivers', async () => {
-    try {
-      const data = await DriverManager.getAllDrivers()
-      return { success: true, data }
-    } catch (error: any) {
-      console.error('获取驱动列表失败:', error)
-      return { success: false, error: error.message || '获取驱动列表失败' }
-    }
-  })
-  ipcMain.handle('scan-drivers-streaming', async () => {
-    try {
-      await DriverManager.scanDriversStreaming()
-      return { success: true }
-    } catch (error: any) {
-      console.error('流式扫描驱动失败:', error)
-      return { success: false, error: error.message || '扫描失败' }
-    }
-  })
-  ipcMain.handle('get-problematic-drivers', async () => {
-    try {
-      const data = await DriverManager.getProblematicDrivers()
-      return { success: true, data }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-  ipcMain.handle('get-drivers-by-category', async () => {
-    try {
-      const data = await DriverManager.getDriversByCategory()
-      return { success: true, data }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-  ipcMain.handle('get-driver-stats', async () => {
-    try {
-      const data = await DriverManager.getDriverStats()
-      return { success: true, data }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-  ipcMain.handle('check-driver-updates', async () => {
-    try {
-      const data = await DriverManager.checkDriverUpdates()
-      return { success: true, data }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-  ipcMain.handle('install-driver-update', async (_, driverTitle) => {
-    try {
-      const result = await DriverManager.installDriverUpdate(driverTitle)
-      return result
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-  ipcMain.handle('scan-hardware-changes', async () => {
-    try {
-      const result = await DriverManager.scanForHardwareChanges()
-      return { success: true, data: result }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
-  })
-  ipcMain.handle('export-drivers', async () => {
-    const result = await dialog.showOpenDialog(mainWindow!, {
-      properties: ['openDirectory'],
-      title: '选择驱动备份保存位置'
-    })
-    if (!result.canceled && result.filePaths.length > 0) {
-      return DriverManager.exportDrivers(result.filePaths[0])
-    }
-    return { success: false, message: '已取消' }
-  })
-  ipcMain.handle('disable-device', (_, deviceId) => DriverManager.disableDevice(deviceId))
-  ipcMain.handle('enable-device', (_, deviceId) => DriverManager.enableDevice(deviceId))
 
   // CPU健康检测（Intel 13/14代缩缸问题）
   ipcMain.handle('cpu-health-check', async () => {

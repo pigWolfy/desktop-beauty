@@ -42,7 +42,6 @@ const navItems = [
   { path: '/desktop', name: '桌面管理', icon: '🖥️' },
   { path: '/wallpaper', name: '壁纸管理', icon: '🖼️' },
   { path: '/monitor', name: '系统监控', icon: '📊' },
-  { path: '/driver', name: '驱动管理', icon: '🔧' },
   { path: '/cpu-health', name: 'CPU健康', icon: '🔍' },
   { path: '/settings', name: '设置', icon: '⚙️' }
 ]
