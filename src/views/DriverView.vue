@@ -26,7 +26,7 @@
       </div>
       <div class="progress-text">
         <span class="scanning-icon">🔍</span>
-        正在扫描驱动... {{ scanProgress.total ? `${scanProgress.current} / ${scanProgress.total}` : '正在获取...' }}
+        {{ getProgressText() }}
       </div>
     </div>
 
@@ -138,6 +138,9 @@ interface Driver {
 // 状态
 const drivers = ref<Driver[]>([])
 const isScanning = ref(false)
+const isListingDrivers = ref(false)
+const isCheckingUpdates = ref(false)
+const updatableDeviceIds = ref<Set<string>>(new Set())
 const lastScanTime = ref<number | null>(null)
 const activeTab = ref('all')
 const expandedGroups = ref<Record<string, boolean>>({})
@@ -347,6 +350,18 @@ function getEmptyText(): string {
   }
 }
 
+function getProgressText(): string {
+  if (isListingDrivers.value) {
+    return scanProgress.total 
+      ? `正在扫描驱动... ${scanProgress.current} / ${scanProgress.total}` 
+      : '正在获取驱动列表...'
+  }
+  if (isCheckingUpdates.value) {
+    return '正在检查驱动更新...'
+  }
+  return '扫描完成'
+}
+
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
   toast.message = message
   toast.type = type
@@ -362,16 +377,24 @@ async function scanDrivers(): Promise<void> {
   if (isScanning.value) return
   
   isScanning.value = true
+  isListingDrivers.value = true
+  isCheckingUpdates.value = true
+  
   drivers.value = []
+  updatableDeviceIds.value.clear()
   scanProgress.current = 0
   scanProgress.total = 0
+  
+  // 并行开始检查更新
+  checkUpdates()
   
   try {
     // 使用流式扫描
     await window.electronAPI.scanDriversStreaming()
   } catch (error: any) {
     showToast(`扫描出错: ${error.message}`, 'error')
-    isScanning.value = false
+    isListingDrivers.value = false
+    checkScanFinished()
   }
 }
 
@@ -379,32 +402,48 @@ async function scanDrivers(): Promise<void> {
 function handleScanProgress(data: { current: number; total: number; drivers: Driver[] }) {
   scanProgress.current = data.current
   scanProgress.total = data.total
-  // 追加新扫描到的驱动
-  drivers.value = [...drivers.value, ...data.drivers]
+  
+  // 检查是否有更新
+  const newDrivers = data.drivers.map(d => ({
+    ...d,
+    hasUpdate: updatableDeviceIds.value.has(d.deviceId)
+  }))
+  
+  drivers.value = [...drivers.value, ...newDrivers]
 }
 
 // 处理扫描完成
 function handleScanComplete(data: { total: number }) {
-  isScanning.value = false
+  isListingDrivers.value = false
   lastScanTime.value = Date.now()
-  showToast(`扫描完成，共 ${data.total} 个驱动`, 'success')
-  
-  // 同时检查更新
-  checkUpdates()
+  checkScanFinished()
+}
+
+function checkScanFinished() {
+  if (!isListingDrivers.value && !isCheckingUpdates.value) {
+    isScanning.value = false
+    showToast(`扫描完成，共 ${drivers.value.length} 个驱动`, 'success')
+  }
 }
 
 async function checkUpdates(): Promise<void> {
   try {
     const result = await window.electronAPI.checkDriverUpdates()
     if (result.success && result.data) {
-      const updateSet = new Set(result.data.map((u: any) => u.deviceId || u.DeviceID))
+      const ids = result.data.map((u: any) => u.deviceId || u.DeviceID)
+      updatableDeviceIds.value = new Set(ids)
+      
+      // 更新已加载的驱动状态
       drivers.value = drivers.value.map(d => ({
         ...d,
-        hasUpdate: updateSet.has(d.deviceId)
+        hasUpdate: updatableDeviceIds.value.has(d.deviceId)
       }))
     }
   } catch (error) {
     console.error('检查更新失败:', error)
+  } finally {
+    isCheckingUpdates.value = false
+    checkScanFinished()
   }
 }
 

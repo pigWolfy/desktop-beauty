@@ -26,8 +26,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   nextWallpaper: () => ipcRenderer.invoke('next-wallpaper'),
   addWallpaper: (path: string) => ipcRenderer.invoke('add-wallpaper', path),
   removeWallpaper: (path: string) => ipcRenderer.invoke('remove-wallpaper', path),
+  removeAllWallpapers: () => ipcRenderer.invoke('remove-all-wallpapers'),
   startWallpaperSlideshow: (interval: number) => ipcRenderer.invoke('start-wallpaper-slideshow', interval),
   stopWallpaperSlideshow: () => ipcRenderer.invoke('stop-wallpaper-slideshow'),
+  getWallpaperSlideshowStatus: () => ipcRenderer.invoke('get-wallpaper-slideshow-status'),
   getLocalImage: (path: string) => ipcRenderer.invoke('get-local-image', path),
 
   // 动态壁纸

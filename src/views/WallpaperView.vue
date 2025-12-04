@@ -22,9 +22,45 @@
     <div v-show="activeTab === 'local'" class="tab-content">
       <div class="section-header">
         <h3>本地壁纸</h3>
-        <button class="btn-add" @click="addLocalWallpaper">
-          <span>+</span> 添加壁纸
-        </button>
+        <div class="header-actions">
+          <button class="btn-danger" @click="removeAllWallpapers" v-if="localWallpapers.length > 0">
+            <span>🗑️</span> 清空全部
+          </button>
+          <button class="btn-add" @click="addLocalWallpaper">
+            <span>+</span> 添加壁纸
+          </button>
+        </div>
+      </div>
+
+      <!-- 幻灯片设置 -->
+      <div class="slideshow-card">
+        <div class="slideshow-header">
+          <div class="slideshow-title">
+            <span class="icon">🎞️</span>
+            <h4>本地壁纸轮播</h4>
+            <button class="toggle-btn" :class="{ active: slideshowEnabled }" @click="toggleSlideshowWithButton">
+              {{ slideshowEnabled ? '已开启' : '已关闭' }}
+            </button>
+          </div>
+          <p class="desc" v-if="!slideshowEnabled">开启后将自动轮播当前列表中的本地壁纸</p>
+          <p class="status" v-else>
+             <span class="status-dot active"></span>
+             正在轮播中
+          </p>
+        </div>
+
+        <div class="slideshow-settings" v-if="slideshowEnabled">
+           <div class="setting-row">
+             <label>切换间隔</label>
+             <select v-model="slideshowInterval" @change="updateSlideshowInterval">
+              <option :value="60000">1 分钟</option>
+              <option :value="300000">5 分钟</option>
+              <option :value="600000">10 分钟</option>
+              <option :value="1800000">30 分钟</option>
+              <option :value="3600000">1 小时</option>
+            </select>
+           </div>
+        </div>
       </div>
       
       <div class="wallpaper-grid">
@@ -35,39 +71,15 @@
           @click="setWallpaper(wallpaper.path)"
         >
           <img 
-            v-if="wallpaper.thumbnailDataUrl" 
-            :src="wallpaper.thumbnailDataUrl" 
+            :src="`local-file://image?path=${encodeURIComponent(wallpaper.path)}`" 
             :alt="wallpaper.name" 
+            loading="lazy"
           />
-          <div v-else class="loading-placeholder">
-            <span>加载中...</span>
-          </div>
           <div class="overlay">
             <button class="btn-apply" @click.stop="setWallpaper(wallpaper.path)">应用</button>
             <button class="btn-delete" @click.stop="removeWallpaper(wallpaper.path)">删除</button>
           </div>
           <span v-if="currentWallpaper === wallpaper.path" class="current-badge">当前</span>
-        </div>
-      </div>
-
-      <!-- 幻灯片设置 -->
-      <div class="slideshow-section">
-        <h3>壁纸轮播</h3>
-        <div class="slideshow-controls">
-          <label>
-            <input type="checkbox" v-model="slideshowEnabled" @change="toggleSlideshow" />
-            启用自动切换
-          </label>
-          <div class="interval-selector" v-if="slideshowEnabled">
-            <span>切换间隔:</span>
-            <select v-model="slideshowInterval" @change="updateSlideshowInterval">
-              <option :value="60000">1 分钟</option>
-              <option :value="300000">5 分钟</option>
-              <option :value="600000">10 分钟</option>
-              <option :value="1800000">30 分钟</option>
-              <option :value="3600000">1 小时</option>
-            </select>
-          </div>
         </div>
       </div>
     </div>
@@ -380,9 +392,21 @@
           <p>来源: {{ previewingWallpaper.source }}</p>
         </div>
         <div class="preview-actions">
-          <button @click="downloadAndApply(previewingWallpaper)">下载并应用</button>
-          <button @click="downloadWallpaper(previewingWallpaper)">仅下载</button>
-          <button @click="closePreview">关闭</button>
+          <button 
+            class="btn-primary" 
+            @click="downloadAndApply(previewingWallpaper)"
+            :disabled="downloading"
+          >
+            {{ downloading ? '处理中...' : '下载并应用' }}
+          </button>
+          <button 
+            class="btn-secondary" 
+            @click="downloadWallpaper(previewingWallpaper)"
+            :disabled="downloading"
+          >
+            {{ downloading ? '下载中...' : '仅下载' }}
+          </button>
+          <button class="btn-close" @click="closePreview" :disabled="downloading">关闭</button>
         </div>
       </div>
     </div>
@@ -451,6 +475,7 @@ const selectedCategory = ref('')
 const searchQuery = ref('')
 const loading = ref(false)
 const loadingMore = ref(false)
+const downloading = ref(false)
 const currentPage = ref(1)
 
 // 屏幕分辨率信息
@@ -566,6 +591,7 @@ onMounted(async () => {
   await loadFavorites()
   await checkLiveWallpaperStatus()
   await loadAutoChangeConfig()
+  await loadSlideshowStatus()
   // 获取屏幕分辨率信息
   try {
     screenInfo.value = await electronAPI.getScreenInfo()
@@ -586,25 +612,8 @@ async function loadLocalWallpapers() {
   try {
     const wallpapers = await electronAPI.getWallpapers()
     localWallpapers.value = wallpapers
-    
-    // 异步加载每张壁纸的缩略图
-    for (const wallpaper of localWallpapers.value) {
-      loadWallpaperThumbnail(wallpaper)
-    }
   } catch (error) {
     console.error('加载本地壁纸失败:', error)
-  }
-}
-
-// 加载单张壁纸的缩略图
-async function loadWallpaperThumbnail(wallpaper: LocalWallpaper) {
-  try {
-    const dataUrl = await electronAPI.getLocalImage(wallpaper.path)
-    if (dataUrl) {
-      wallpaper.thumbnailDataUrl = dataUrl
-    }
-  } catch (error) {
-    console.error('加载缩略图失败:', wallpaper.path, error)
   }
 }
 
@@ -631,11 +640,26 @@ async function setWallpaper(path: string) {
 }
 
 async function removeWallpaper(path: string) {
+  if (!confirm('确定要删除这张壁纸吗？')) return
   try {
     await electronAPI.removeWallpaper(path)
     await loadLocalWallpapers()
   } catch (error) {
     console.error('删除壁纸失败:', error)
+  }
+}
+
+async function removeAllWallpapers() {
+  if (!confirm('确定要清空所有本地壁纸吗？此操作不可恢复！')) return
+  
+  try {
+    const success = await electronAPI.removeAllWallpapers()
+    if (success) {
+      await loadLocalWallpapers()
+      currentWallpaper.value = ''
+    }
+  } catch (error) {
+    console.error('清空壁纸失败:', error)
   }
 }
 
@@ -653,9 +677,26 @@ async function toggleSlideshow() {
   }
 }
 
+async function toggleSlideshowWithButton() {
+  slideshowEnabled.value = !slideshowEnabled.value
+  await toggleSlideshow()
+}
+
 async function updateSlideshowInterval() {
   if (slideshowEnabled.value) {
     await electronAPI.startWallpaperSlideshow(slideshowInterval.value)
+  }
+}
+
+async function loadSlideshowStatus() {
+  try {
+    const status = await electronAPI.getWallpaperSlideshowStatus()
+    if (status) {
+      slideshowEnabled.value = status.enabled
+      slideshowInterval.value = status.interval
+    }
+  } catch (error) {
+    console.error('加载轮播状态失败:', error)
   }
 }
 
@@ -665,10 +706,23 @@ async function selectSource(sourceId: string) {
   selectedCategory.value = ''
   searchQuery.value = ''
   
-  if (sourceId === 'best') {
-    await loadBestMatchWallpapers()
-  } else {
-    await loadPopular()
+  switch (sourceId) {
+    case 'best':
+      await loadBestMatchWallpapers()
+      break
+    case 'bing':
+      await loadBingWallpapers()
+      break
+    case 'wallhaven':
+      await loadWallhavenWallpapers()
+      break
+    case 'picsum':
+      await loadPicsumWallpapers()
+      break
+    case 'all':
+    default:
+      await loadPopular()
+      break
   }
 }
 
@@ -709,19 +763,74 @@ async function loadPopular() {
   }
 }
 
+async function loadBingWallpapers() {
+  loading.value = true
+  try {
+    const result = await electronAPI.onlineWallpaperGetBing()
+    onlineWallpapers.value = await markFavorites(result)
+    currentPage.value = 1
+  } catch (error) {
+    console.error('加载Bing壁纸失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadWallhavenWallpapers() {
+  loading.value = true
+  try {
+    const result = await electronAPI.onlineWallpaperGetWallhaven({ page: 1 })
+    onlineWallpapers.value = await markFavorites(result)
+    currentPage.value = 1
+  } catch (error) {
+    console.error('加载Wallhaven壁纸失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadPicsumWallpapers() {
+  loading.value = true
+  try {
+    const result = await electronAPI.onlineWallpaperGetPicsum(1)
+    onlineWallpapers.value = await markFavorites(result)
+    currentPage.value = 1
+  } catch (error) {
+    console.error('加载Picsum壁纸失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 async function searchOnline() {
   if (!searchQuery.value.trim()) {
-    await loadPopular()
+    // 如果搜索词为空，重新加载当前源的默认内容
+    await selectSource(activeSource.value)
     return
   }
   
   loading.value = true
   selectedCategory.value = ''
   try {
-    const result = await electronAPI.onlineWallpaperSearch({ 
-      query: searchQuery.value,
-      page: 1 
-    })
+    let result: WallpaperItem[] = []
+    
+    if (activeSource.value === 'wallhaven') {
+      // Wallhaven 专属搜索
+      result = await electronAPI.onlineWallpaperGetWallhaven({ 
+        query: searchQuery.value,
+        page: 1 
+      })
+    } else {
+      // 其他源不支持搜索，切换到"全部"并进行全局搜索
+      if (activeSource.value !== 'all') {
+        activeSource.value = 'all'
+      }
+      result = await electronAPI.onlineWallpaperSearch({ 
+        query: searchQuery.value,
+        page: 1 
+      })
+    }
+
     onlineWallpapers.value = await markFavorites(result)
     currentPage.value = 1
   } catch (error) {
@@ -751,22 +860,51 @@ async function loadMore() {
   loadingMore.value = true
   currentPage.value++
   try {
-    let result: WallpaperItem[]
-    if (activeSource.value === 'best') {
-      // 最佳适配模式下加载更多
-      result = await electronAPI.onlineWallpaperGetForResolution({ page: currentPage.value })
+    let result: WallpaperItem[] = []
+    
+    if (searchQuery.value) {
+      if (activeSource.value === 'wallhaven') {
+        result = await electronAPI.onlineWallpaperGetWallhaven({ 
+          query: searchQuery.value, 
+          page: currentPage.value 
+        })
+      } else {
+        result = await electronAPI.onlineWallpaperSearch({ 
+          query: searchQuery.value,
+          page: currentPage.value 
+        })
+      }
     } else if (selectedCategory.value) {
       result = await electronAPI.onlineWallpaperGetCategory(selectedCategory.value, currentPage.value)
-    } else if (searchQuery.value) {
-      result = await electronAPI.onlineWallpaperSearch({ 
-        query: searchQuery.value,
-        page: currentPage.value 
-      })
     } else {
-      result = await electronAPI.onlineWallpaperSearch({ page: currentPage.value })
+      switch (activeSource.value) {
+        case 'best':
+          result = await electronAPI.onlineWallpaperGetForResolution({ page: currentPage.value })
+          break
+        case 'bing':
+          // Bing API 通常只返回最近几天的壁纸，不支持分页加载更多
+          result = []
+          break
+        case 'wallhaven':
+          result = await electronAPI.onlineWallpaperGetWallhaven({ page: currentPage.value })
+          break
+        case 'picsum':
+          result = await electronAPI.onlineWallpaperGetPicsum(currentPage.value)
+          break
+        case 'all':
+        default:
+          result = await electronAPI.onlineWallpaperSearch({ page: currentPage.value })
+          break
+      }
     }
-    const marked = await markFavorites(result)
-    onlineWallpapers.value = [...onlineWallpapers.value, ...marked]
+    
+    if (result.length > 0) {
+      const marked = await markFavorites(result)
+      onlineWallpapers.value = [...onlineWallpapers.value, ...marked]
+    } else if (activeSource.value === 'bing') {
+      // Bing 没有更多数据，不回退页码，但也不做任何事
+      currentPage.value--
+    }
   } catch (error) {
     console.error('加载更多失败:', error)
     currentPage.value--  // 加载失败时回退页码
@@ -827,6 +965,8 @@ function closePreview() {
 }
 
 async function downloadWallpaper(wallpaper: WallpaperItem) {
+  if (downloading.value) return
+  downloading.value = true
   try {
     const path = await electronAPI.onlineWallpaperDownload(wallpaper.downloadUrl)
     if (path) {
@@ -836,10 +976,14 @@ async function downloadWallpaper(wallpaper: WallpaperItem) {
     }
   } catch (error) {
     console.error('下载壁纸失败:', error)
+  } finally {
+    downloading.value = false
   }
 }
 
 async function downloadAndApply(wallpaper: WallpaperItem) {
+  if (downloading.value) return
+  downloading.value = true
   try {
     // 直接下载并应用，无需用户选择目录
     const path = await electronAPI.onlineWallpaperDownloadAndApply(wallpaper.downloadUrl)
@@ -853,6 +997,8 @@ async function downloadAndApply(wallpaper: WallpaperItem) {
     }
   } catch (error) {
     console.error('下载并应用壁纸失败:', error)
+  } finally {
+    downloading.value = false
   }
 }
 
@@ -1424,6 +1570,29 @@ function formatDuration(ms: number): string {
   h3 {
     color: $text-primary;
   }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+}
+
+.btn-danger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba($error-color, 0.1);
+  border: 1px solid rgba($error-color, 0.3);
+  border-radius: $radius-md;
+  color: $error-color;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba($error-color, 0.2);
+    border-color: $error-color;
+  }
 }
 
 .btn-add {
@@ -1564,15 +1733,119 @@ function formatDuration(ms: number): string {
   }
 }
 
-.slideshow-section {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: rgba($surface-secondary, 0.5);
+.slideshow-card {
+  background: linear-gradient(135deg, rgba($accent-primary, 0.15) 0%, rgba($accent-secondary, 0.1) 100%);
+  border: 1px solid rgba($accent-primary, 0.3);
   border-radius: $radius-lg;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
   
-  h3 {
+  .slideshow-header {
     margin-bottom: 1rem;
+  }
+  
+  .slideshow-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    
+    .icon {
+      font-size: 1.3rem;
+    }
+    
+    h4 {
+      color: $text-primary;
+      font-size: 1.1rem;
+      margin: 0;
+      flex: 1;
+    }
+  }
+
+  .toggle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    background: rgba($text-primary, 0.2);
     color: $text-primary;
+    
+    &.active {
+      background: $gradient-primary;
+      color: white;
+    }
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .desc {
+    color: rgba($text-primary, 0.6);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .status {
+    color: $accent-primary;
+    font-size: 0.9rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: pulse 2s infinite;
+      
+      &.active {
+        background: #4ade80;
+      }
+    }
+  }
+  
+  .slideshow-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba($accent-primary, 0.2);
+    
+    .setting-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      
+      > label {
+        color: rgba($text-primary, 0.8);
+        min-width: 100px;
+        font-size: 0.95rem;
+      }
+      
+      select {
+        padding: 0.5rem 1rem;
+        background: rgba($bg-primary, 0.5);
+        border: 1px solid rgba($accent-primary, 0.3);
+        border-radius: $radius-sm;
+        color: $text-primary;
+        cursor: pointer;
+        
+        &:focus {
+          outline: none;
+          border-color: $accent-primary;
+        }
+        
+        option {
+          background: $bg-primary;
+          color: $text-primary;
+        }
+      }
+    }
   }
 }
 
@@ -2481,6 +2754,59 @@ function formatDuration(ms: number): string {
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+  }
+}
+
+.preview-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+
+  button {
+    padding: 0.6rem 1.2rem;
+    border-radius: $radius-md;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-primary {
+    background: $gradient-primary;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: $shadow-glow;
+    }
+  }
+
+  .btn-secondary {
+    background: rgba($surface-secondary, 0.8);
+    color: $text-primary;
+    border: 1px solid rgba($accent-primary, 0.3);
+
+    &:hover:not(:disabled) {
+      background: rgba($accent-primary, 0.2);
+      border-color: $accent-primary;
+    }
+  }
+
+  .btn-close {
+    background: transparent;
+    color: $text-muted;
+    border: 1px solid transparent;
+
+    &:hover:not(:disabled) {
+      color: $text-primary;
+      background: rgba(255, 255, 255, 0.1);
+    }
   }
 }
 </style>

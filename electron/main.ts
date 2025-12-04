@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, globalShortcut, Tray, Menu, nativeImage, dialog, screen, protocol, net } from 'electron'
-import { join } from 'path'
+import { join, extname } from 'path'
 import { readFile, writeFile } from 'fs/promises'
 import { existsSync, createWriteStream } from 'fs'
 import { DesktopManager } from './services/desktopManager'
@@ -182,6 +182,8 @@ async function downloadAndApplyWallpaper(downloadUrl: string): Promise<string | 
     // 应用壁纸
     if (filePath) {
       const success = await wallpaperManager.setWallpaper(filePath)
+      // 清理旧壁纸，保留最近50张
+      wallpaperManager.cleanupOldWallpapers(50).catch(console.error)
       return success ? filePath : null
     }
     return null
@@ -232,8 +234,13 @@ function setupIPC() {
   ipcMain.handle('next-wallpaper', () => wallpaperManager.nextWallpaper())
   ipcMain.handle('add-wallpaper', (_, path) => wallpaperManager.addWallpaper(path))
   ipcMain.handle('remove-wallpaper', (_, path) => wallpaperManager.removeWallpaper(path))
+  ipcMain.handle('remove-all-wallpapers', () => wallpaperManager.removeAllWallpapers())
   ipcMain.handle('start-wallpaper-slideshow', (_, interval) => wallpaperManager.startSlideshow(interval))
   ipcMain.handle('stop-wallpaper-slideshow', () => wallpaperManager.stopSlideshow())
+  ipcMain.handle('get-wallpaper-slideshow-status', () => ({
+    enabled: wallpaperManager.isSlideshowEnabled(),
+    interval: wallpaperManager.getSlideshowInterval()
+  }))
 
   // 系统监控
   ipcMain.handle('get-system-info', () => systemMonitor.getSystemInfo())
@@ -420,29 +427,7 @@ function setupIPC() {
   
   // 下载壁纸并直接应用（下载到应用数据目录）
   ipcMain.handle('online-wallpaper-download-and-apply', async (_, downloadUrl) => {
-    try {
-      const { join } = await import('path')
-      const wallpapersDir = join(app.getPath('userData'), 'wallpapers')
-      
-      // 确保目录存在
-      const fs = await import('fs')
-      if (!fs.existsSync(wallpapersDir)) {
-        fs.mkdirSync(wallpapersDir, { recursive: true })
-      }
-      
-      // 下载壁纸
-      const filePath = await onlineWallpaperService.downloadWallpaper(downloadUrl, wallpapersDir)
-      
-      // 应用壁纸
-      if (filePath) {
-        const success = await wallpaperManager.setWallpaper(filePath)
-        return success ? filePath : null
-      }
-      return null
-    } catch (error) {
-      console.error('Download and apply failed:', error)
-      return null
-    }
+    return await downloadAndApplyWallpaper(downloadUrl)
   })
   ipcMain.handle('online-wallpaper-set-unsplash-key', (_, key) => onlineWallpaperService.setUnsplashApiKey(key))
   ipcMain.handle('online-wallpaper-set-pexels-key', (_, key) => onlineWallpaperService.setPexelsApiKey(key))
@@ -616,16 +601,44 @@ declare module 'electron' {
 
 // 注册自定义协议（在 app ready 之前）
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'local-file', privileges: { secure: true, standard: true, supportFetchAPI: true, stream: true } }
+  { 
+    scheme: 'local-file', 
+    privileges: { 
+      secure: true, 
+      standard: true, 
+      supportFetchAPI: true, 
+      stream: true,
+      bypassCSP: true
+    } 
+  }
 ])
 
 app.whenReady().then(() => {
   // 注册 local-file 协议处理本地文件
   protocol.handle('local-file', async (request) => {
     try {
-      // URL 格式: local-file://E:/path/to/file.jpg
-      const filePath = decodeURIComponent(request.url.replace('local-file://', ''))
-      return net.fetch('file://' + filePath)
+      const url = new URL(request.url)
+      const filePath = url.searchParams.get('path')
+      
+      if (!filePath) {
+        return new Response('Path not provided', { status: 400 })
+      }
+
+      const data = await readFile(filePath)
+      const ext = extname(filePath).toLowerCase()
+      let mimeType = 'image/jpeg'
+      if (ext === '.png') mimeType = 'image/png'
+      else if (ext === '.gif') mimeType = 'image/gif'
+      else if (ext === '.webp') mimeType = 'image/webp'
+      else if (ext === '.bmp') mimeType = 'image/bmp'
+      else if (ext === '.svg') mimeType = 'image/svg+xml'
+      
+      return new Response(data, {
+        headers: { 
+          'content-type': mimeType,
+          'cache-control': 'public, max-age=31536000'
+        }
+      })
     } catch (error) {
       console.error('Protocol handler error:', error)
       return new Response('File not found', { status: 404 })

@@ -1,6 +1,6 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { readdir, copyFile, unlink } from 'fs/promises'
+import { readdir, copyFile, unlink, stat } from 'fs/promises'
 import { join, extname } from 'path'
 import { app, dialog } from 'electron'
 import Store from 'electron-store'
@@ -30,6 +30,43 @@ export class WallpaperManager {
       await execAsync(`if not exist "${this.wallpapersDir}" mkdir "${this.wallpapersDir}"`)
     } catch (error) {
       console.error('Failed to create wallpapers directory:', error)
+    }
+  }
+
+  async cleanupOldWallpapers(maxCount: number = 50): Promise<void> {
+    try {
+      const files = await readdir(this.wallpapersDir)
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp']
+      
+      const wallpaperFiles = []
+      for (const file of files) {
+        if (imageExtensions.includes(extname(file).toLowerCase())) {
+          const filePath = join(this.wallpapersDir, file)
+          const stats = await stat(filePath)
+          wallpaperFiles.push({
+            path: filePath,
+            time: stats.mtime.getTime()
+          })
+        }
+      }
+
+      // Sort by time descending (newest first)
+      wallpaperFiles.sort((a, b) => b.time - a.time)
+
+      // Remove files exceeding maxCount
+      if (wallpaperFiles.length > maxCount) {
+        const filesToRemove = wallpaperFiles.slice(maxCount)
+        for (const file of filesToRemove) {
+          // Don't delete the current wallpaper
+          const currentWallpaper = this.store.get('currentWallpaper')
+          if (file.path !== currentWallpaper) {
+             await unlink(file.path)
+             console.log('Cleaned up old wallpaper:', file.path)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to cleanup wallpapers:', error)
     }
   }
 
@@ -139,6 +176,19 @@ public class Wallpaper {
       return true
     } catch (error) {
       console.error('Failed to remove wallpaper:', error)
+      return false
+    }
+  }
+
+  async removeAllWallpapers(): Promise<boolean> {
+    try {
+      const wallpapers = await this.getWallpapers()
+      for (const wallpaper of wallpapers) {
+        await unlink(wallpaper.path)
+      }
+      return true
+    } catch (error) {
+      console.error('Failed to remove all wallpapers:', error)
       return false
     }
   }

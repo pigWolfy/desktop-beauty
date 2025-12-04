@@ -5,35 +5,67 @@
         <span class="drag-icon">⋮⋮</span>
       </div>
       
-      <button class="widget-btn" @click="nextWallpaper" title="切换壁纸">
-        <span class="icon">🖼️</span>
+      <button class="widget-btn" @click="nextWallpaper" title="切换壁纸" :disabled="isSwitching">
+        <span class="icon" :class="{ 'spin': isSwitching }">🖼️</span>
       </button>
       
-      <button class="widget-btn" @click="organizeDesktop" title="整理桌面">
-        <span class="icon">🧹</span>
+      <button class="widget-btn" @click="organizeDesktop" title="整理桌面" :disabled="isOrganizing">
+        <span class="icon" :class="{ 'sweep': isOrganizing }">🧹</span>
       </button>
       
       <button class="widget-btn" @click="openMain" title="打开主界面">
-        <span class="icon">🏠</span>
+        <span class="icon hover-bounce">🏠</span>
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref } from 'vue'
+
+const isSwitching = ref(false)
+const isOrganizing = ref(false)
 
 const nextWallpaper = async () => {
-  await window.electronAPI?.nextWallpaper()
+  if (isSwitching.value) return
+  isSwitching.value = true
+  
+  // 至少播放 800ms 动画，让交互更明显
+  const minTime = new Promise(resolve => setTimeout(resolve, 800))
+  
+  try {
+    await Promise.all([
+      window.electronAPI?.nextWallpaper(),
+      minTime
+    ])
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isSwitching.value = false
+  }
 }
 
 const organizeDesktop = async () => {
-  // Get settings first to know how to organize
-  const settings = await window.electronAPI?.getAppSettings()
-  await window.electronAPI?.organizeDesktop({
-    sortBy: settings?.defaultSort || 'type',
-    groupBy: settings?.autoGroup ? 'type' : 'none'
-  })
+  if (isOrganizing.value) return
+  isOrganizing.value = true
+  
+  const minTime = new Promise(resolve => setTimeout(resolve, 800))
+
+  try {
+    // Get settings first to know how to organize
+    const settings = await window.electronAPI?.getAppSettings()
+    await Promise.all([
+      window.electronAPI?.organizeDesktop({
+        sortBy: settings?.defaultSort || 'type',
+        groupBy: settings?.autoGroup ? 'type' : 'none'
+      }),
+      minTime
+    ])
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isOrganizing.value = false
+  }
 }
 
 const openMain = () => {
@@ -115,6 +147,36 @@ const openMain = () => {
 
   .icon {
     font-size: 16px;
+    display: inline-block;
   }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.8s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-25deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.sweep {
+  animation: sweep 0.8s ease-in-out infinite;
+}
+
+.hover-bounce {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.widget-btn:hover .hover-bounce {
+  transform: scale(1.2);
 }
 </style>

@@ -60,6 +60,7 @@ interface ElectronAPI {
   removeWallpaper: (path: string) => Promise<boolean>
   startWallpaperSlideshow: (interval: number) => Promise<boolean>
   stopWallpaperSlideshow: () => Promise<void>
+  getWallpaperSlideshowStatus: () => Promise<{ enabled: boolean, interval: number }>
 
   // 自动更换壁纸
   autoWallpaperGetConfig: () => Promise<AutoChangeConfig>
