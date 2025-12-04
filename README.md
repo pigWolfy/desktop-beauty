@@ -32,13 +32,17 @@
 
 ## 📸 界面预览
 
-| 主页预览 | 壁纸中心 |
-| :---: | :---: |
-| ![Home](docs/images/home.png) | ![Wallpaper](docs/images/wallpaper.png) |
-| **系统监控** | **CPU 健康检测** |
-| ![Monitor](docs/images/monitor.png) | ![CPU Health](docs/images/cpuhealth.png) |
-| **驱动管理** | **设置界面** |
-| ![Driver](docs/images/driver.png) | ![Settings](docs/images/settings.png) |
+### 🏠 桌面管理 & 壁纸中心
+![Home](docs/images/home.png)
+![Wallpaper](docs/images/wallpaper.png)
+
+### 📊 系统监控 & CPU 健康
+![Monitor](docs/images/monitor.png)
+![CPU Health](docs/images/cpuhealth.png)
+
+### 🛡️ 驱动管理 & 设置
+![Driver](docs/images/driver.png)
+![Settings](docs/images/settings.png)
 
 ## 🛠️ 技术栈
 
