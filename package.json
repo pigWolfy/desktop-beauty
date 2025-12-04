@@ -1,8 +1,12 @@
 {
   "name": "desktop-beauty",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "一个优雅的桌面管理工具 - Desktop Beauty",
   "main": "dist/main/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pigWolfy/desktop-beauty.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build && electron-builder",
@@ -61,6 +65,11 @@
       {
         "provider": "generic",
         "url": "https://desktop.ruifeis.net/updates"
+      },
+      {
+        "provider": "github",
+        "owner": "pigWolfy",
+        "repo": "desktop-beauty"
       }
     ]
   }
