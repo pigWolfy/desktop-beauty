@@ -94,7 +94,23 @@ export class UpdateService {
 
     ipcMain.handle('quit-and-install', () => {
       if (!this.isDev) {
-        autoUpdater.quitAndInstall()
+        // 设置为静默安装，强制退出所有窗口
+        autoUpdater.autoInstallOnAppQuit = true
+        
+        // 强制退出并安装
+        // isSilent: true - 静默安装，不显示安装向导
+        // isForceRunAfter: true - 安装后自动启动应用
+        setImmediate(() => {
+          // 先关闭所有窗口
+          const { BrowserWindow } = require('electron')
+          BrowserWindow.getAllWindows().forEach((win: any) => {
+            win.removeAllListeners('close')
+            win.close()
+          })
+          
+          // 然后退出并安装
+          autoUpdater.quitAndInstall(false, true)
+        })
       }
     })
   }
