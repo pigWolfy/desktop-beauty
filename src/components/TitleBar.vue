@@ -8,13 +8,13 @@
     </div>
     
     <div class="titlebar-controls">
-      <button class="control-btn" @click="minimize" title="最小化">
+      <button class="control-btn" @click="minimize" :title="t('titleBar.minimize')">
         <span>─</span>
       </button>
-      <button class="control-btn" @click="maximize" title="最大化">
+      <button class="control-btn" @click="maximize" :title="t('titleBar.maximize')">
         <span>□</span>
       </button>
-      <button class="control-btn close" @click="close" title="关闭">
+      <button class="control-btn close" @click="close" :title="t('titleBar.close')">
         <span>×</span>
       </button>
     </div>
@@ -22,6 +22,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const minimize = () => {
   window.electronAPI?.windowMinimize()
 }

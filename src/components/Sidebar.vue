@@ -23,7 +23,7 @@
         <div class="stat-item">
           <span class="stat-icon">📊</span>
           <span class="stat-value">{{ memoryUsage }}%</span>
-          <span class="stat-label">内存</span>
+          <span class="stat-label">{{ t('home.memory') }}</span>
         </div>
       </div>
     </div>
@@ -31,20 +31,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 
-const navItems = [
-  { path: '/desktop', name: '桌面管理', icon: '🖥️' },
-  { path: '/wallpaper', name: '壁纸管理', icon: '🖼️' },
-  { path: '/monitor', name: '系统监控', icon: '📊' },
-  { path: '/cpu-health', name: 'CPU健康', icon: '🔍' },
-  { path: '/settings', name: '设置', icon: '⚙️' }
-]
+const navItems = computed(() => [
+  { path: '/desktop', name: t('nav.desktop'), icon: '🖥️' },
+  { path: '/wallpaper', name: t('nav.wallpaper'), icon: '🖼️' },
+  { path: '/monitor', name: t('nav.monitor'), icon: '📊' },
+  { path: '/cpu-health', name: t('nav.cpuHealth'), icon: '🔍' },
+  { path: '/settings', name: t('nav.settings'), icon: '⚙️' }
+])
 
 const cpuUsage = ref(0)
 const memoryUsage = ref(0)

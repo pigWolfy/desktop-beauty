@@ -33,13 +33,13 @@
         <div class="notification-content">
           <span class="notification-icon">🎉</span>
           <div class="notification-text">
-            <span class="notification-title">发现新版本 v{{ newVersion }}</span>
-            <span class="notification-desc">点击前往设置页面下载更新</span>
+            <span class="notification-title">{{ t('update.available', { version: newVersion }) }}</span>
+            <span class="notification-desc">{{ t('settings.newVersion') }}</span>
           </div>
         </div>
         <div class="notification-actions">
-          <button class="btn-go" @click="goToSettings">立即查看</button>
-          <button class="btn-dismiss" @click="dismissNotification">稍后</button>
+          <button class="btn-go" @click="goToSettings">{{ t('update.viewNow') }}</button>
+          <button class="btn-dismiss" @click="dismissNotification">{{ t('common.close') }}</button>
         </div>
       </div>
     </Transition>
@@ -49,10 +49,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import TitleBar from './components/TitleBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import QuickLauncher from './components/QuickLauncher.vue'
 
+const { t } = useI18n()
 const showLauncher = ref(false)
 const route = useRoute()
 const router = useRouter()

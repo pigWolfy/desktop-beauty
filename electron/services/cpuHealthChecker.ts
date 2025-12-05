@@ -86,11 +86,25 @@ export interface WheaError {
   processorNumber?: number
 }
 
+export interface DetailedAnalysisData {
+  cpuName: string
+  cores: number
+  threads: number
+  microcodeVersion: string
+  biosDate: string
+  isAffected: boolean
+  wheaErrorCount: number
+  crashCount: number
+  wheaErrors: Array<{ time: string; type: string }>
+}
+
 export interface CpuHealthReport {
   timestamp: string
   cpuInfo: CpuInfo
   isAffectedCpu: boolean
   affectedReason: string
+  affectedReasonKey: string // Translation key for i18n
+  affectedReasonParams?: Record<string, string> // Params for translation interpolation
   microcodeInfo: MicrocodeInfo
   wheaErrors: WheaError[]
   wheaErrorCount: number
@@ -98,7 +112,9 @@ export interface CpuHealthReport {
   riskLevel: 'safe' | 'low' | 'medium' | 'high' | 'critical'
   riskScore: number
   recommendations: string[]
+  recommendationKeys: Array<{ key: string; params?: Record<string, string | number> }> // Translation keys for i18n
   detailedAnalysis: string[]
+  detailedAnalysisData: DetailedAnalysisData // Structured data for frontend i18n
 }
 
 // 获取 CPU 详细信息
@@ -332,12 +348,16 @@ $count
 }
 
 // 检查CPU是否为受影响型号
-function checkIfAffectedCpu(cpuName: string): { isAffected: boolean; reason: string } {
+function checkIfAffectedCpu(cpuName: string): { isAffected: boolean; reason: string; reasonKey: string; reasonParams?: Record<string, string> } {
   const name = cpuName.toUpperCase()
   
   // 检查是否为 Intel
   if (!name.includes('INTEL')) {
-    return { isAffected: false, reason: '非Intel处理器，不受此问题影响' }
+    return { 
+      isAffected: false, 
+      reason: '非Intel处理器，不受此问题影响',
+      reasonKey: 'notIntel'
+    }
   }
   
   // 检查是否为 K 系列（高性能版，主要受影响）
@@ -348,7 +368,11 @@ function checkIfAffectedCpu(cpuName: string): { isAffected: boolean; reason: str
   const is14thGen = /I[579]-14\d{3}/i.test(name)
   
   if (!is13thGen && !is14thGen) {
-    return { isAffected: false, reason: '非13/14代处理器，不受"缩缸"问题影响' }
+    return { 
+      isAffected: false, 
+      reason: '非13/14代处理器，不受"缩缸"问题影响',
+      reasonKey: 'not13_14Gen'
+    }
   }
   
   // 提取具体型号
@@ -359,7 +383,9 @@ function checkIfAffectedCpu(cpuName: string): { isAffected: boolean; reason: str
   if (isKSeries) {
     return { 
       isAffected: true, 
-      reason: `检测到 ${modelName}，这是受"缩缸"问题影响的K系列高性能处理器！` 
+      reason: `检测到 ${modelName}，这是受"缩缸"问题影响的K系列高性能处理器！`,
+      reasonKey: 'affectedKSeries',
+      reasonParams: { model: modelName }
     }
   }
   
@@ -371,24 +397,34 @@ function checkIfAffectedCpu(cpuName: string): { isAffected: boolean; reason: str
     if (name.includes('I9') || name.includes('I7')) {
       return { 
         isAffected: true, 
-        reason: `检测到 ${modelName}，属于13/14代处理器，存在一定风险` 
+        reason: `检测到 ${modelName}，属于13/14代处理器，存在一定风险`,
+        reasonKey: 'someRisk',
+        reasonParams: { model: modelName }
       }
     }
     // i5-13600 / 14600 (非K)
     if (/I5-1[34]600/.test(name)) {
        return { 
         isAffected: true, 
-        reason: `检测到 ${modelName}，属于13/14代处理器，存在一定风险` 
+        reason: `检测到 ${modelName}，属于13/14代处理器，存在一定风险`,
+        reasonKey: 'someRisk',
+        reasonParams: { model: modelName }
       }
     }
 
     return { 
       isAffected: false, 
-      reason: `检测到 ${modelName}，为13/14代低功耗版本，风险较低` 
+      reason: `检测到 ${modelName}，为13/14代低功耗版本，风险较低`,
+      reasonKey: 'lowRisk',
+      reasonParams: { model: modelName }
     }
   }
   
-  return { isAffected: false, reason: '未识别为受影响型号' }
+  return { 
+    isAffected: false, 
+    reason: '未识别为受影响型号',
+    reasonKey: 'unrecognized'
+  }
 }
 
 // 计算风险等级
@@ -440,41 +476,49 @@ function generateRecommendations(
   wheaCount: number,
   crashCount: number,
   riskLevel: string
-): string[] {
-  const recommendations: string[] = []
+): { texts: string[]; keys: Array<{ key: string; params?: Record<string, string | number> }> } {
+  const texts: string[] = []
+  const keys: Array<{ key: string; params?: Record<string, string | number> }> = []
   
   if (!isAffected) {
-    recommendations.push('✅ 您的CPU不属于受"缩缸"问题影响的型号，无需担心')
-    return recommendations
+    texts.push('✅ 您的CPU不属于受"缩缸"问题影响的型号，无需担心')
+    keys.push({ key: 'notAffected' })
+    return { texts, keys }
   }
   
   if (!isFixed) {
-    recommendations.push('🔴 【重要】请尽快更新BIOS以获取Intel最新微码修复（0x129或更高）')
-    recommendations.push('💡 访问主板制造商官网下载最新BIOS')
+    texts.push('🔴 【重要】请尽快更新BIOS以获取Intel最新微码修复（0x129或更高）')
+    texts.push('💡 访问主板制造商官网下载最新BIOS')
+    keys.push({ key: 'updateBios' })
+    keys.push({ key: 'visitManufacturer' })
   } else {
-    // 检查是否为最新 0x12B
-    // 注意：这里我们需要传入具体的微码版本来判断，但为了简化，我们假设 isFixed 为 true 时
-    // 如果需要更精细的建议，可以在参数中增加 microcodeVersion
-    recommendations.push('✅ 微码已更新到修复版本，可以防止进一步损坏')
+    texts.push('✅ 微码已更新到修复版本，可以防止进一步损坏')
+    keys.push({ key: 'microcodeFixed' })
   }
   
   if (wheaCount > 0 || crashCount > 0) {
-    recommendations.push('⚠️ 检测到硬件错误/系统崩溃记录，建议进行稳定性测试')
-    recommendations.push('💡 可使用 Prime95、OCCT 等工具进行CPU压力测试')
+    texts.push('⚠️ 检测到硬件错误/系统崩溃记录，建议进行稳定性测试')
+    texts.push('💡 可使用 Prime95、OCCT 等工具进行CPU压力测试')
+    keys.push({ key: 'errorsDetected' })
+    keys.push({ key: 'useStressTest' })
   }
   
   if (riskLevel === 'high' || riskLevel === 'critical') {
-    recommendations.push('🔴 风险较高，如频繁崩溃建议联系Intel申请RMA更换')
-    recommendations.push('💡 Intel已延长受影响CPU的保修期至5年')
+    texts.push('🔴 风险较高，如频繁崩溃建议联系Intel申请RMA更换')
+    texts.push('💡 Intel已延长受影响CPU的保修期至5年')
+    keys.push({ key: 'highRiskRma' })
+    keys.push({ key: 'extendedWarranty' })
   }
   
-  recommendations.push('📋 建议定期运行此检测，监控系统稳定性')
+  texts.push('📋 建议定期运行此检测，监控系统稳定性')
+  keys.push({ key: 'regularCheck' })
   
   if (isAffected && !isFixed) {
-    recommendations.push('⚡ 临时缓解：在BIOS中启用Intel Default Settings可降低风险')
+    texts.push('⚡ 临时缓解：在BIOS中启用Intel Default Settings可降低风险')
+    keys.push({ key: 'tempMitigation' })
   }
   
-  return recommendations
+  return { texts, keys }
 }
 
 // 生成详细分析
@@ -484,7 +528,7 @@ function generateDetailedAnalysis(
   wheaErrors: WheaError[],
   crashCount: number,
   isAffected: boolean
-): string[] {
+): { texts: string[]; data: DetailedAnalysisData } {
   const analysis: string[] = []
   
   analysis.push(`📊 CPU型号: ${cpuInfo.name}`)
@@ -503,7 +547,6 @@ function generateDetailedAnalysis(
   if (wheaErrors.length > 0) {
     analysis.push('')
     analysis.push(`⚠️ 近30天检测到 ${wheaErrors.length} 条硬件错误日志`)
-    // 只显示最近5条
     wheaErrors.slice(0, 5).forEach(e => {
       analysis.push(`  - [${e.timeCreated}] ${e.errorType}`)
     })
@@ -514,7 +557,20 @@ function generateDetailedAnalysis(
     analysis.push(`⚠️ 近30天系统意外重启/崩溃: ${crashCount} 次`)
   }
   
-  return analysis
+  // Return structured data for frontend translation
+  const data: DetailedAnalysisData = {
+    cpuName: cpuInfo.name,
+    cores: cpuInfo.cores,
+    threads: cpuInfo.threads,
+    microcodeVersion: microcodeInfo.version,
+    biosDate: microcodeInfo.updateDate,
+    isAffected,
+    wheaErrorCount: wheaErrors.length,
+    crashCount,
+    wheaErrors: wheaErrors.slice(0, 5).map(e => ({ time: e.timeCreated, type: e.errorType }))
+  }
+  
+  return { texts: analysis, data }
 }
 
 // 完整健康检查
@@ -528,7 +584,7 @@ export async function runCpuHealthCheck(): Promise<CpuHealthReport> {
   ])
   
   // 检查是否为受影响CPU
-  const { isAffected, reason } = checkIfAffectedCpu(cpuInfo.name)
+  const { isAffected, reason, reasonKey, reasonParams } = checkIfAffectedCpu(cpuInfo.name)
   
   // 计算风险等级
   const { level, score } = calculateRiskLevel(
@@ -539,7 +595,7 @@ export async function runCpuHealthCheck(): Promise<CpuHealthReport> {
   )
   
   // 生成建议
-  const recommendations = generateRecommendations(
+  const { texts: recommendations, keys: recommendationKeys } = generateRecommendations(
     isAffected,
     microcodeInfo.isFixed,
     wheaErrors.length,
@@ -548,7 +604,7 @@ export async function runCpuHealthCheck(): Promise<CpuHealthReport> {
   )
   
   // 生成详细分析
-  const detailedAnalysis = generateDetailedAnalysis(
+  const { texts: detailedAnalysis, data: detailedAnalysisData } = generateDetailedAnalysis(
     cpuInfo,
     microcodeInfo,
     wheaErrors,
@@ -561,6 +617,8 @@ export async function runCpuHealthCheck(): Promise<CpuHealthReport> {
     cpuInfo,
     isAffectedCpu: isAffected,
     affectedReason: reason,
+    affectedReasonKey: reasonKey,
+    affectedReasonParams: reasonParams,
     microcodeInfo,
     wheaErrors,
     wheaErrorCount: wheaErrors.length,
@@ -568,6 +626,8 @@ export async function runCpuHealthCheck(): Promise<CpuHealthReport> {
     riskLevel: level,
     riskScore: score,
     recommendations,
-    detailedAnalysis
+    recommendationKeys,
+    detailedAnalysis,
+    detailedAnalysisData
   }
 }

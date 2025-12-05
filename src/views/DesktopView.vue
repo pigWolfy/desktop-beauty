@@ -1,36 +1,36 @@
 <template>
   <div class="desktop-view">
-    <h1 class="page-title">桌面管理 🖥️</h1>
+    <h1 class="page-title">{{ t('desktop.title') }}</h1>
 
     <!-- 操作工具栏 -->
     <div class="toolbar card">
       <div class="toolbar-left">
         <button class="btn btn-primary" @click="organizeDesktop">
           <span>📁</span>
-          一键整理
+          {{ t('desktop.organize') }}
         </button>
         <button class="btn btn-secondary" @click="refreshIcons">
           <span>🔄</span>
-          刷新
+          {{ t('desktop.refresh') }}
         </button>
         <button class="btn btn-secondary" @click="toggleIcons">
           <span>{{ iconsHidden ? '👁️' : '🙈' }}</span>
-          {{ iconsHidden ? '显示图标' : '隐藏图标' }}
+          {{ iconsHidden ? t('desktop.showIcons') : t('desktop.hideIcons') }}
         </button>
       </div>
       <div class="toolbar-right">
         <select v-model="sortBy" class="select-box">
-          <option value="name">按名称排序</option>
-          <option value="type">按类型排序</option>
-          <option value="date">按日期排序</option>
-          <option value="size">按大小排序</option>
+          <option value="name">{{ t('desktop.sortByName') }}</option>
+          <option value="type">{{ t('desktop.sortByType') }}</option>
+          <option value="date">{{ t('desktop.sortByDate') }}</option>
+          <option value="size">{{ t('desktop.sortBySize') }}</option>
         </select>
       </div>
     </div>
 
     <!-- 桌面图标预览 -->
     <div class="icons-section mt-md">
-      <h3 class="section-title">📂 桌面图标 ({{ icons.length }} 个)</h3>
+      <h3 class="section-title">{{ t('desktop.desktopIcons') }} ({{ t('desktop.iconCount', { count: icons.length }) }})</h3>
       
       <!-- 加载状态骨架屏 -->
       <div v-if="loading" class="icons-skeleton">
@@ -43,7 +43,7 @@
 
       <div v-else-if="icons.length === 0" class="empty-state">
         <span class="empty-icon">📭</span>
-        <span>桌面上没有图标</span>
+        <span>{{ t('desktop.noItems') }}</span>
       </div>
 
       <div v-else class="icons-grid">
@@ -65,47 +65,47 @@
     <!-- 分组管理 -->
     <div class="groups-section mt-lg">
       <div class="section-header flex-between">
-        <h3 class="section-title">📦 创建分组</h3>
+        <h3 class="section-title">{{ t('desktop.createGroup') }}</h3>
       </div>
       
       <div class="group-form card" v-if="selectedIcons.length > 0">
-        <p class="selected-count">已选择 {{ selectedIcons.length }} 个图标</p>
+        <p class="selected-count">{{ t('desktop.selectedCount', { count: selectedIcons.length }) }}</p>
         <div class="form-row">
           <input
             v-model="newGroupName"
             type="text"
-            placeholder="输入分组名称..."
+            :placeholder="t('desktop.groupNamePlaceholder')"
             class="input-box"
           />
           <button class="btn btn-primary" @click="createGroup" :disabled="!newGroupName">
-            创建分组
+            {{ t('desktop.createGroupBtn') }}
           </button>
         </div>
       </div>
       
       <div v-else class="hint-text">
-        💡 选择多个图标后可以创建分组
+        {{ t('desktop.selectHint') }}
       </div>
     </div>
 
     <!-- 整理选项 -->
     <div class="options-section mt-lg">
-      <h3 class="section-title">⚙️ 整理选项</h3>
+      <h3 class="section-title">{{ t('desktop.organizeOptions') }}</h3>
       <div class="options-grid">
         <div class="option-card" @click="organizeByType">
           <span class="option-icon">📂</span>
-          <h4>按类型分组</h4>
-          <p>将文件按类型自动分到不同文件夹</p>
+          <h4>{{ t('desktop.organizeByType') }}</h4>
+          <p>{{ t('desktop.organizeByTypeDesc') }}</p>
         </div>
         <div class="option-card" @click="organizeByDate">
           <span class="option-icon">📅</span>
-          <h4>按日期分组</h4>
-          <p>将文件按修改日期分组整理</p>
+          <h4>{{ t('desktop.organizeByDate') }}</h4>
+          <p>{{ t('desktop.organizeByDateDesc') }}</p>
         </div>
         <div class="option-card" @click="cleanupShortcuts">
           <span class="option-icon">🔗</span>
-          <h4>清理快捷方式</h4>
-          <p>将快捷方式统一归类管理</p>
+          <h4>{{ t('desktop.cleanEmpty') }}</h4>
+          <p>{{ t('desktop.cleanEmptyDesc') }}</p>
         </div>
       </div>
     </div>
@@ -114,6 +114,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface DesktopIcon {
   name: string
@@ -173,11 +176,11 @@ const getIconEmoji = (icon: DesktopIcon): string => {
 
 const getTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
-    file: '文件',
-    folder: '文件夹',
-    shortcut: '快捷方式'
+    file: t('desktop.file'),
+    folder: t('desktop.folder'),
+    shortcut: t('desktop.shortcut')
   }
-  return labels[type] || type
+  return labels[type] || t('desktop.unknown')
 }
 
 const loadIcons = async () => {
@@ -234,13 +237,13 @@ const organizeByDate = async () => {
 }
 
 const cleanupShortcuts = async () => {
-  // 筛选快捷方式并创建分组
+  // Filter shortcuts and create group
   const shortcuts = icons.value
     .filter(i => i.type === 'shortcut')
     .map(i => i.path)
   
   if (shortcuts.length > 0) {
-    await window.electronAPI?.createIconGroup('快捷方式', shortcuts)
+    await window.electronAPI?.createIconGroup(t('desktop.shortcutsGroup'), shortcuts)
     await loadIcons()
   }
 }

@@ -1,8 +1,8 @@
 <template>
   <div class="wallpaper-view">
     <div class="view-header">
-      <h2>壁纸管理</h2>
-      <p>个性化您的桌面背景</p>
+      <h2>{{ t('wallpaper.title') }}</h2>
+      <p>{{ t('wallpaper.subtitle') }}</p>
     </div>
 
     <!-- 选项卡 -->
@@ -21,13 +21,13 @@
     <!-- 本地壁纸 -->
     <div v-show="activeTab === 'local'" class="tab-content">
       <div class="section-header">
-        <h3>本地壁纸</h3>
+        <h3>{{ t('wallpaper.localWallpapers') }}</h3>
         <div class="header-actions">
           <button class="btn-danger" @click="removeAllWallpapers" v-if="localWallpapers.length > 0">
-            <span>🗑️</span> 清空全部
+            <span>🗑️</span> {{ t('wallpaper.clearAll') }}
           </button>
           <button class="btn-add" @click="addLocalWallpaper">
-            <span>+</span> 添加壁纸
+            <span>+</span> {{ t('wallpaper.addLocal') }}
           </button>
         </div>
       </div>
@@ -37,27 +37,27 @@
         <div class="slideshow-header">
           <div class="slideshow-title">
             <span class="icon">🎞️</span>
-            <h4>本地壁纸轮播</h4>
+            <h4>{{ t('wallpaper.slideshow') }}</h4>
             <button class="toggle-btn" :class="{ active: slideshowEnabled }" @click="toggleSlideshowWithButton">
-              {{ slideshowEnabled ? '已开启' : '已关闭' }}
+              {{ slideshowEnabled ? t('common.enabled') : t('common.disabled') }}
             </button>
           </div>
-          <p class="desc" v-if="!slideshowEnabled">开启后将自动轮播当前列表中的本地壁纸</p>
+          <p class="desc" v-if="!slideshowEnabled">{{ t('wallpaper.slideshowDesc') }}</p>
           <p class="status" v-else>
              <span class="status-dot active"></span>
-             正在轮播中
+             {{ t('wallpaper.slideshowRunning') }}
           </p>
         </div>
 
         <div class="slideshow-settings" v-if="slideshowEnabled">
            <div class="setting-row">
-             <label>切换间隔</label>
+             <label>{{ t('wallpaper.switchInterval') }}</label>
              <select v-model="slideshowInterval" @change="updateSlideshowInterval">
-              <option :value="60000">1 分钟</option>
-              <option :value="300000">5 分钟</option>
-              <option :value="600000">10 分钟</option>
-              <option :value="1800000">30 分钟</option>
-              <option :value="3600000">1 小时</option>
+              <option :value="60000">1 {{ t('wallpaper.minutes') }}</option>
+              <option :value="300000">5 {{ t('wallpaper.minutes') }}</option>
+              <option :value="600000">10 {{ t('wallpaper.minutes') }}</option>
+              <option :value="1800000">30 {{ t('wallpaper.minutes') }}</option>
+              <option :value="3600000">1 {{ t('wallpaper.hours') }}</option>
             </select>
            </div>
         </div>
@@ -76,10 +76,10 @@
             loading="lazy"
           />
           <div class="overlay">
-            <button class="btn-apply" @click.stop="setWallpaper(wallpaper.path)">应用</button>
-            <button class="btn-delete" @click.stop="removeWallpaper(wallpaper.path)">删除</button>
+            <button class="btn-apply" @click.stop="setWallpaper(wallpaper.path)">{{ t('wallpaper.apply') }}</button>
+            <button class="btn-delete" @click.stop="removeWallpaper(wallpaper.path)">{{ t('common.delete') }}</button>
           </div>
-          <span v-if="currentWallpaper === wallpaper.path" class="current-badge">当前</span>
+          <span v-if="currentWallpaper === wallpaper.path" class="current-badge">{{ t('common.current') }}</span>
         </div>
       </div>
     </div>
@@ -91,43 +91,43 @@
         <div class="auto-change-header">
           <div class="auto-change-title">
             <span class="auto-icon">🔄</span>
-            <h4>自动更换壁纸</h4>
+            <h4>{{ t('wallpaper.autoChangeTitle') }}</h4>
             <button class="toggle-btn" :class="{ active: autoChangeConfig.enabled }" @click="onAutoChangeToggle">
-              {{ autoChangeConfig.enabled ? '已开启' : '已关闭' }}
+              {{ autoChangeConfig.enabled ? t('common.enabled') : t('common.disabled') }}
             </button>
           </div>
-          <p class="auto-desc" v-if="!autoChangeConfig.enabled">开启后将按设定时间自动从网络获取新壁纸</p>
+          <p class="auto-desc" v-if="!autoChangeConfig.enabled">{{ t('wallpaper.autoChangeDesc') }}</p>
           <p class="auto-status" v-else>
             <span class="status-dot active"></span>
-            运行中 · 下次更换: {{ formatNextChange }}
+            {{ t('wallpaper.slideshowRunning') }} · {{ t('wallpaper.nextChange') }}: {{ formatNextChange }}
           </p>
         </div>
         
         <div class="auto-change-settings" v-show="autoChangeConfig.enabled">
           <div class="setting-row">
-            <label>更换频率</label>
+            <label>{{ t('wallpaper.interval') }}</label>
             <div class="interval-inputs">
               <input type="number" v-model.number="autoChangeConfig.intervalValue" min="1" max="999" @change="saveAutoChangeConfig">
               <select v-model="autoChangeConfig.intervalUnit" @change="saveAutoChangeConfig">
-                <option value="minutes">分钟</option>
-                <option value="hours">小时</option>
-                <option value="days">天</option>
+                <option value="minutes">{{ t('wallpaper.minutes') }}</option>
+                <option value="hours">{{ t('wallpaper.hours') }}</option>
+                <option value="days">{{ t('monitor.days') }}</option>
               </select>
             </div>
           </div>
           
           <div class="setting-row">
-            <label>壁纸分辨率</label>
+            <label>{{ t('wallpaper.resolution') }}</label>
             <select v-model="autoChangeConfig.resolution" @change="saveAutoChangeConfig">
-              <option value="auto">自动适配</option>
-              <option value="1080p">1080P (1920×1080)</option>
-              <option value="2k">2K (2560×1440)</option>
-              <option value="4k">4K (3840×2160)</option>
+              <option value="auto">{{ t('wallpaper.resolutions.auto') }}</option>
+              <option value="1080p">{{ t('wallpaper.resolutions.hd') }}</option>
+              <option value="2k">{{ t('wallpaper.resolutions.2k') }}</option>
+              <option value="4k">{{ t('wallpaper.resolutions.4k') }}</option>
             </select>
           </div>
           
           <div class="setting-row categories-row">
-            <label>壁纸分类（可多选）</label>
+            <label>{{ t('wallpaper.category') }}</label>
             <div class="category-chips">
               <button 
                 v-for="cat in availableCategories" 
@@ -138,12 +138,12 @@
                 {{ cat.icon }} {{ cat.name }}
               </button>
             </div>
-            <p class="category-hint" v-if="autoChangeConfig.categories.length === 0">未选择分类将随机获取所有类型壁纸</p>
+            <p class="category-hint" v-if="autoChangeConfig.categories.length === 0"></p>
           </div>
           
           <div class="setting-actions">
             <button class="btn-change-now" @click="changeWallpaperNow" :disabled="changingWallpaper">
-              {{ changingWallpaper ? '更换中...' : '🎲 立即更换一张' }}
+              {{ changingWallpaper ? t('wallpaper.loading') : '🎲 ' + t('wallpaper.change') }}
             </button>
           </div>
         </div>
@@ -160,7 +160,7 @@
             @click="selectSource(source.id)"
           >
             {{ source.icon }} {{ source.name }}
-            <span v-if="source.free" class="free-badge">免费</span>
+            <span v-if="source.free" class="free-badge">Free</span>
           </button>
         </div>
 
@@ -169,10 +169,10 @@
           <input 
             v-model="searchQuery" 
             type="text" 
-            placeholder="搜索壁纸..."
+            :placeholder="t('common.search') + '...'"
             @keyup.enter="searchOnline"
           />
-          <button @click="searchOnline">搜索</button>
+          <button @click="searchOnline">{{ t('common.search') }}</button>
         </div>
 
         <!-- 分类 -->
@@ -190,8 +190,8 @@
         <!-- 当前屏幕分辨率提示 -->
         <div v-if="screenInfo && activeSource === 'best'" class="resolution-hint">
           <span class="icon">🖥️</span>
-          <span>您的屏幕分辨率: {{ screenInfo.primary.width }}×{{ screenInfo.primary.height }}</span>
-          <span class="hint">（已自动筛选最佳匹配壁纸）</span>
+          <span>{{ t('wallpaper.screenResolution') }}: {{ screenInfo.primary.width }}×{{ screenInfo.primary.height }}</span>
+          <span class="hint">（{{ t('wallpaper.perfectMatch') }}）</span>
         </div>
 
         <!-- 加载状态骨架屏（仅初始加载时显示） -->
@@ -214,7 +214,7 @@
               <span class="resolution-badge">{{ wallpaper.width }}×{{ wallpaper.height }}</span>
               <span class="author" v-if="wallpaper.author && !isSourceName(wallpaper.author)">{{ wallpaper.author }}</span>
             </div>
-            <span v-if="isResolutionMatch(wallpaper)" class="match-badge" title="完美匹配您的屏幕">✓</span>
+            <span v-if="isResolutionMatch(wallpaper)" class="match-badge" :title="t('wallpaper.perfectMatch')">✓</span>
             <button 
               class="btn-favorite"
               :class="{ favorited: wallpaper.isFavorite }"
@@ -233,7 +233,7 @@
             :disabled="loadingMore"
           >
             <span v-if="loadingMore" class="loading-spinner"></span>
-            {{ loadingMore ? '加载中...' : '加载更多' }}
+            {{ loadingMore ? t('wallpaper.loading') : t('wallpaper.loadMore') }}
           </button>
         </div>
       </div>
@@ -242,32 +242,32 @@
     <!-- 动态壁纸 -->
     <div v-show="activeTab === 'live'" class="tab-content">
       <div class="section-header">
-        <h3>动态壁纸</h3>
+        <h3>{{ t('wallpaper.liveWallpaper') }}</h3>
         <div class="live-status" :class="{ active: liveWallpaperActive }">
-          {{ liveWallpaperActive ? '运行中' : '已停止' }}
+          {{ liveWallpaperActive ? t('wallpaper.slideshowRunning') : t('wallpaper.liveStopped') }}
         </div>
       </div>
 
       <!-- 使用说明 -->
       <div class="usage-guide">
-        <h4>📖 使用说明</h4>
+        <h4>📖 {{ t('wallpaper.liveGuide.title') }}</h4>
         <div class="guide-content">
           <div class="guide-step">
             <span class="step-num">1</span>
-            <span>点击下方「添加本地视频」按钮选择视频文件</span>
+            <span>{{ t('wallpaper.liveGuide.step1') }}</span>
           </div>
           <div class="guide-step">
             <span class="step-num">2</span>
-            <span>视频将自动循环播放作为桌面壁纸</span>
+            <span>{{ t('wallpaper.liveGuide.step2') }}</span>
           </div>
           <div class="guide-step">
             <span class="step-num">3</span>
-            <span>可调节音量、播放速度，或暂停/停止播放</span>
+            <span>{{ t('wallpaper.liveGuide.step3') }}</span>
           </div>
         </div>
         
         <div class="format-info">
-          <h5>✅ 支持的视频格式</h5>
+          <h5>✅ {{ t('wallpaper.liveGuide.formatTitle') }}</h5>
           <div class="format-list">
             <span class="format-tag">.mp4</span>
             <span class="format-tag">.webm</span>
@@ -276,15 +276,15 @@
             <span class="format-tag">.avi</span>
             <span class="format-tag">.mkv</span>
           </div>
-          <p class="format-tip">💡 推荐使用 MP4 (H.264) 格式，兼容性最佳</p>
+          <p class="format-tip">💡 {{ t('wallpaper.liveGuide.formatTip') }}</p>
         </div>
         
         <div class="video-tips">
-          <h5>📌 小贴士</h5>
+          <h5>📌 {{ t('wallpaper.liveGuide.tipsTitle') }}</h5>
           <ul>
-            <li>建议选择循环播放效果好的视频（如风景、抽象动画）</li>
-            <li>视频分辨率建议与屏幕分辨率匹配或更高</li>
-            <li>可从 <a href="#" @click.prevent="openExternal('https://www.pexels.com/videos/')">Pexels</a> 或 <a href="#" @click.prevent="openExternal('https://pixabay.com/videos/')">Pixabay</a> 下载免费视频</li>
+            <li>{{ t('wallpaper.liveGuide.tip1') }}</li>
+            <li>{{ t('wallpaper.liveGuide.tip2') }}</li>
+            <li><span v-html="getTip3Html()"></span></li>
           </ul>
         </div>
       </div>
@@ -293,11 +293,11 @@
 
       <!-- 添加本地视频壁纸 -->
       <div class="add-live-section">
-        <h4>🎬 添加视频壁纸</h4>
+        <h4>🎬 {{ t('wallpaper.liveGuide.addVideo') }}</h4>
         <div class="add-buttons">
           <button class="btn-add-video primary" @click="addVideoWallpaper">
             <span>📁</span>
-            选择本地视频文件
+            {{ t('wallpaper.selectVideo') }}
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@
       <!-- 控制面板 -->
       <div v-if="liveWallpaperActive" class="live-controls">
         <div class="control-group">
-          <label>音量</label>
+          <label>{{ t('monitor.sound') || 'Volume' }}</label>
           <input 
             type="range" 
             min="0" 
@@ -317,7 +317,7 @@
         </div>
 
         <div class="control-group">
-          <label>播放速度</label>
+          <label>{{ t('monitor.speed') }}</label>
           <select v-model="livePlaybackRate" @change="setLivePlaybackRate">
             <option :value="0.5">0.5x</option>
             <option :value="0.75">0.75x</option>
@@ -329,15 +329,15 @@
         </div>
 
         <div class="control-buttons">
-          <button @click="pauseLiveWallpaper" v-if="!livePaused">⏸ 暂停</button>
-          <button @click="resumeLiveWallpaper" v-else>▶ 继续</button>
-          <button @click="stopLiveWallpaper" class="btn-stop">⏹ 停止</button>
+          <button @click="pauseLiveWallpaper" v-if="!livePaused">⏸ {{ t('common.pause') || 'Pause' }}</button>
+          <button @click="resumeLiveWallpaper" v-else>▶ {{ t('common.resume') || 'Resume' }}</button>
+          <button @click="stopLiveWallpaper" class="btn-stop">⏹ {{ t('wallpaper.stopLive') }}</button>
         </div>
       </div>
 
       <!-- 历史记录 -->
       <div class="history-section" v-if="liveHistory.length > 0">
-        <h4>最近使用</h4>
+        <h4>{{ t('home.recentApps').replace('📱 ', '') }}</h4>
         <div class="history-list">
           <div 
             v-for="(item, index) in liveHistory" 
@@ -354,7 +354,7 @@
 
     <!-- 收藏 -->
     <div v-show="activeTab === 'favorites'" class="tab-content">
-      <h3>我的收藏</h3>
+      <h3>{{ t('wallpaper.favorites') }}</h3>
       <div class="wallpaper-grid" v-if="favorites.length > 0">
         <div 
           v-for="wallpaper in favorites" 
@@ -376,8 +376,8 @@
       </div>
       <div v-else class="empty-state">
         <span>💔</span>
-        <p>暂无收藏的壁纸</p>
-        <p>浏览在线壁纸并点击心形图标添加收藏</p>
+        <p>{{ t('wallpaper.noWallpapers') }}</p>
+        <p></p>
       </div>
     </div>
 
@@ -386,10 +386,10 @@
       <div class="preview-content" @click.stop>
         <img :src="previewingWallpaper.url" :alt="previewingWallpaper.description" />
         <div class="preview-info">
-          <h3>{{ previewingWallpaper.description || '无标题' }}</h3>
-          <p>作者: {{ previewingWallpaper.author }}</p>
-          <p>尺寸: {{ previewingWallpaper.width }} x {{ previewingWallpaper.height }}</p>
-          <p>来源: {{ previewingWallpaper.source }}</p>
+          <h3>{{ previewingWallpaper.description || 'No Title' }}</h3>
+          <p>Author: {{ previewingWallpaper.author }}</p>
+          <p>Size: {{ previewingWallpaper.width }} x {{ previewingWallpaper.height }}</p>
+          <p>Source: {{ previewingWallpaper.source }}</p>
         </div>
         <div class="preview-actions">
           <button 
@@ -397,16 +397,16 @@
             @click="downloadAndApply(previewingWallpaper)"
             :disabled="downloading"
           >
-            {{ downloading ? '处理中...' : '下载并应用' }}
+            {{ downloading ? t('wallpaper.loading') : t('wallpaper.download') + ' & ' + t('wallpaper.apply') }}
           </button>
           <button 
             class="btn-secondary" 
             @click="downloadWallpaper(previewingWallpaper)"
             :disabled="downloading"
           >
-            {{ downloading ? '下载中...' : '仅下载' }}
+            {{ downloading ? t('wallpaper.loading') : t('wallpaper.download') }}
           </button>
-          <button class="btn-close" @click="closePreview" :disabled="downloading">关闭</button>
+          <button class="btn-close" @click="closePreview" :disabled="downloading">{{ t('common.close') }}</button>
         </div>
       </div>
     </div>
@@ -415,6 +415,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+// Generate tip3 HTML with links
+const getTip3Html = () => {
+  const pexelsLink = '<a href="#" onclick="window.electronAPI?.openExternal(\'https://www.pexels.com/videos/\'); return false;">Pexels</a>'
+  const pixabayLink = '<a href="#" onclick="window.electronAPI?.openExternal(\'https://pixabay.com/videos/\'); return false;">Pixabay</a>'
+  return t('wallpaper.liveGuide.tip3', { pexels: pexelsLink, pixabay: pixabayLink })
+}
 
 interface LocalWallpaper {
   path: string
@@ -444,20 +454,20 @@ interface LiveWallpaperConfig {
   playbackRate: number
 }
 
-const tabs = [
-  { id: 'local', name: '本地壁纸', icon: '📁' },
-  { id: 'online', name: '在线壁纸', icon: '🌐' },
-  { id: 'live', name: '动态壁纸', icon: '🎬' },
-  { id: 'favorites', name: '我的收藏', icon: '❤️' }
-]
+const tabs = computed(() => [
+  { id: 'local', name: t('wallpaper.localWallpapers'), icon: '📁' },
+  { id: 'online', name: t('wallpaper.onlineWallpapers'), icon: '🌐' },
+  { id: 'live', name: t('wallpaper.liveWallpaper'), icon: '🎬' },
+  { id: 'favorites', name: t('wallpaper.favorites'), icon: '❤️' }
+])
 
-const wallpaperSources = [
-  { id: 'best', name: '最佳适配', icon: '✨', free: true },
-  { id: 'all', name: '全部', icon: '🌍', free: true },
-  { id: 'bing', name: 'Bing每日', icon: '🖼️', free: true },
+const wallpaperSources = computed(() => [
+  { id: 'best', name: t('wallpaper.source.best'), icon: '✨', free: true },
+  { id: 'all', name: t('common.all'), icon: '🌍', free: true },
+  { id: 'bing', name: 'Bing', icon: '🖼️', free: true },
   { id: 'wallhaven', name: 'Wallhaven', icon: '🎨', free: true },
   { id: 'picsum', name: 'Picsum', icon: '📷', free: true }
-]
+])
 
 const activeTab = ref('local')
 const activeSource = ref('all')
@@ -543,39 +553,39 @@ const formatNextChange = computed(() => {
     return '未启用'
   }
   if (autoChangeStatus.value.nextChangeIn === null || autoChangeStatus.value.nextChangeIn === undefined) {
-    return '计算中...'
+    return t('wallpaper.calculating')
   }
   const ms = autoChangeStatus.value.nextChangeIn
   if (ms <= 0) {
-    return '即将更换'
+    return t('wallpaper.soon')
   } else if (ms < 60000) {
-    return `${Math.ceil(ms / 1000)} 秒后`
+    return t('wallpaper.timeFormat.secondsLater', { seconds: Math.ceil(ms / 1000) })
   } else if (ms < 3600000) {
-    return `${Math.ceil(ms / 60000)} 分钟后`
+    return t('wallpaper.timeFormat.minutesLater', { minutes: Math.ceil(ms / 60000) })
   } else if (ms < 86400000) {
     const hours = Math.floor(ms / 3600000)
     const minutes = Math.ceil((ms % 3600000) / 60000)
-    return minutes > 0 ? `${hours} 小时 ${minutes} 分钟后` : `${hours} 小时后`
+    return minutes > 0 ? t('wallpaper.timeFormat.hoursMinutesLater', { hours, minutes }) : t('wallpaper.timeFormat.hoursLater', { hours })
   } else {
     const days = Math.floor(ms / 86400000)
     const hours = Math.ceil((ms % 86400000) / 3600000)
-    return hours > 0 ? `${days} 天 ${hours} 小时后` : `${days} 天后`
+    return hours > 0 ? t('wallpaper.timeFormat.daysHoursLater', { days, hours }) : t('wallpaper.timeFormat.daysLater', { days })
   }
 })
 
 // 可选的壁纸分类
-const availableCategories = [
-  { id: 'nature', name: '自然风景', icon: '🌿', query: 'nature' },
-  { id: 'city', name: '城市建筑', icon: '🏙️', query: 'city' },
-  { id: 'abstract', name: '抽象艺术', icon: '🎨', query: 'abstract' },
-  { id: 'animal', name: '动物世界', icon: '🦁', query: 'animal' },
-  { id: 'space', name: '太空星际', icon: '🌌', query: 'space' },
-  { id: 'minimal', name: '极简主义', icon: '⬜', query: 'minimal' },
-  { id: 'dark', name: '暗黑风格', icon: '🌑', query: 'dark' },
-  { id: 'anime', name: '动漫插画', icon: '🎌', query: 'anime' },
-  { id: 'tech', name: '科技数码', icon: '💻', query: 'technology' },
-  { id: 'landscape', name: '风景摄影', icon: '📸', query: 'landscape' }
-]
+const availableCategories = computed(() => [
+  { id: 'nature', name: t('wallpaper.categories.nature'), icon: '🌿', query: 'nature' },
+  { id: 'city', name: t('wallpaper.categories.city'), icon: '🏙️', query: 'city' },
+  { id: 'abstract', name: t('wallpaper.categories.abstract'), icon: '🎨', query: 'abstract' },
+  { id: 'animal', name: t('wallpaper.categories.animal'), icon: '🦁', query: 'animal' },
+  { id: 'space', name: t('wallpaper.categories.space'), icon: '🌌', query: 'space' },
+  { id: 'minimal', name: t('wallpaper.categories.minimal'), icon: '⬜', query: 'minimal' },
+  { id: 'dark', name: t('wallpaper.categories.dark'), icon: '🌑', query: 'dark' },
+  { id: 'anime', name: t('wallpaper.categories.anime'), icon: '🎌', query: 'anime' },
+  { id: 'tech', name: t('wallpaper.categories.tech'), icon: '💻', query: 'technology' },
+  { id: 'landscape', name: t('wallpaper.categories.landscape'), icon: '📸', query: 'landscape' }
+])
 
 // 收藏
 const favorites = ref<WallpaperItem[]>([])

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { setLocale, type Locale } from '../i18n'
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref({
@@ -12,7 +13,8 @@ export const useSettingsStore = defineStore('settings', () => {
     wallpaperInterval: 30,
     monitorInterval: 2000,
     showSidebarStats: true,
-    showWidget: true
+    showWidget: true,
+    language: 'zh-CN' as Locale
   })
 
   const initialized = ref(false)
@@ -28,6 +30,11 @@ export const useSettingsStore = defineStore('settings', () => {
       // Apply initial state
       if (settings.value.wallpaperSlideshow) {
         window.electronAPI?.startWallpaperSlideshow(settings.value.wallpaperInterval * 60 * 1000)
+      }
+      
+      // Apply saved language
+      if (settings.value.language) {
+        setLocale(settings.value.language)
       }
     }
     initialized.value = true

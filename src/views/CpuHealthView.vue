@@ -3,8 +3,8 @@
     <!-- 头部 -->
     <header class="header">
       <div class="title-section">
-        <h1>🔍 CPU健康检测</h1>
-        <p class="subtitle">Intel 13/14代"缩缸"问题检测工具</p>
+        <h1>{{ t('cpuHealth.title') }}</h1>
+        <p class="subtitle">{{ t('cpuHealth.subtitle') }}</p>
       </div>
       <button 
         class="btn-check" 
@@ -12,7 +12,7 @@
         @click="runHealthCheck"
       >
         <span v-if="isChecking" class="spinner"></span>
-        {{ isChecking ? '检测中...' : '开始检测' }}
+        {{ isChecking ? t('cpuHealth.testing') : t('cpuHealth.startTest') }}
       </button>
     </header>
 
@@ -22,8 +22,8 @@
         <div class="cpu-icon">🖥️</div>
         <div class="scan-ring"></div>
       </div>
-      <p>正在分析CPU状态...</p>
-      <p class="hint">正在检测微码版本、系统日志、硬件错误...</p>
+      <p>{{ t('cpuHealth.analyzing') }}</p>
+      <p class="hint">{{ t('cpuHealth.analyzingHint') }}</p>
     </div>
 
     <!-- 检测结果 -->
@@ -33,7 +33,7 @@
         <div class="risk-icon">{{ getRiskIcon(report.riskLevel) }}</div>
         <div class="risk-info">
           <div class="risk-level-text">{{ getRiskLevelText(report.riskLevel) }}</div>
-          <div class="risk-score">风险评分: {{ report.riskScore }}/100</div>
+          <div class="risk-score">{{ t('cpuHealth.riskScore') }}: {{ report.riskScore }}/100</div>
         </div>
         <div class="risk-meter">
           <div class="meter-fill" :style="{ width: report.riskScore + '%' }"></div>
@@ -42,26 +42,26 @@
 
       <!-- CPU信息卡片 -->
       <div class="info-card">
-        <h3>📊 CPU信息</h3>
+        <h3>{{ t('cpuHealth.cpuInfo') }}</h3>
         <div class="info-grid">
           <div class="info-item">
-            <span class="label">处理器</span>
+            <span class="label">{{ t('monitor.processor') }}</span>
             <span class="value">{{ report.cpuInfo.name }}</span>
           </div>
           <div class="info-item">
-            <span class="label">核心/线程</span>
-            <span class="value">{{ report.cpuInfo.cores }}核 / {{ report.cpuInfo.threads }}线程</span>
+            <span class="label">{{ t('cpuHealth.coresThreads') }}</span>
+            <span class="value">{{ report.cpuInfo.cores }}{{ t('monitor.cores') }} / {{ report.cpuInfo.threads }}{{ t('monitor.threads') }}</span>
           </div>
           <div class="info-item">
-            <span class="label">微码版本</span>
+            <span class="label">{{ t('cpuHealth.microcodeVersion') }}</span>
             <span class="value" :class="{ 'text-success': report.microcodeInfo.isFixed, 'text-warning': !report.microcodeInfo.isFixed }">
               {{ report.microcodeInfo.version }}
-              <span v-if="report.microcodeInfo.isFixed" class="badge success">已修复</span>
-              <span v-else class="badge warning">需更新</span>
+              <span v-if="report.microcodeInfo.isFixed" class="badge success">{{ t('cpuHealth.fixed') }}</span>
+              <span v-else class="badge warning">{{ t('cpuHealth.needUpdate') }}</span>
             </span>
           </div>
           <div class="info-item">
-            <span class="label">BIOS日期</span>
+            <span class="label">{{ t('cpuHealth.biosDate') }}</span>
             <span class="value">{{ report.microcodeInfo.updateDate }}</span>
           </div>
         </div>
@@ -70,26 +70,26 @@
       <!-- 受影响状态 -->
       <div class="status-card" :class="{ affected: report.isAffectedCpu, safe: !report.isAffectedCpu }">
         <div class="status-icon">{{ report.isAffectedCpu ? '⚠️' : '✅' }}</div>
-        <div class="status-text">{{ report.affectedReason }}</div>
+        <div class="status-text">{{ getTranslatedReason() }}</div>
       </div>
 
       <!-- 错误统计 -->
       <div class="stats-row">
         <div class="stat-card" :class="{ 'has-error': report.wheaErrorCount > 0 }">
           <div class="stat-value">{{ report.wheaErrorCount }}</div>
-          <div class="stat-label">硬件错误 (30天)</div>
+          <div class="stat-label">{{ t('cpuHealth.hardwareErrors') }}</div>
         </div>
         <div class="stat-card" :class="{ 'has-error': report.recentCrashes > 0 }">
           <div class="stat-value">{{ report.recentCrashes }}</div>
-          <div class="stat-label">系统崩溃 (30天)</div>
+          <div class="stat-label">{{ t('cpuHealth.systemCrashes') }}</div>
         </div>
       </div>
 
       <!-- 建议列表 -->
       <div class="recommendations-card">
-        <h3>💡 建议</h3>
+        <h3>{{ t('cpuHealth.recommendations') }}</h3>
         <ul class="recommendations-list">
-          <li v-for="(rec, index) in report.recommendations" :key="index">
+          <li v-for="(rec, index) in getTranslatedRecommendations()" :key="index">
             {{ rec }}
           </li>
         </ul>
@@ -97,101 +97,101 @@
 
       <!-- 评判标准说明 -->
       <div class="scoring-card">
-        <h3>📐 风险评分计算方式</h3>
+        <h3>{{ t('cpuHealth.scoringMethod') }}</h3>
         <div class="scoring-table">
           <div class="scoring-header">
-            <span>检测项目</span>
-            <span>您的状态</span>
-            <span>得分</span>
+            <span>{{ t('cpuHealth.scoring.testItem') }}</span>
+            <span>{{ t('cpuHealth.scoring.yourStatus') }}</span>
+            <span>{{ t('cpuHealth.scoring.score') }}</span>
           </div>
           <div class="scoring-row">
-            <span class="item">CPU型号是否受影响</span>
+            <span class="item">{{ t('cpuHealth.scoring.cpuAffected') }}</span>
             <span class="status" :class="report.isAffectedCpu ? 'bad' : 'good'">
-              {{ report.isAffectedCpu ? '是 (13/14代K系列)' : '否' }}
+              {{ report.isAffectedCpu ? t('cpuHealth.scoring.yes13_14K') : t('cpuHealth.scoring.no') }}
             </span>
-            <span class="score">{{ report.isAffectedCpu ? '+30分' : '+0分' }}</span>
+            <span class="score">{{ report.isAffectedCpu ? '+30' : '+0' }}</span>
           </div>
           <div class="scoring-row">
-            <span class="item">微码是否已修复 (≥0x0125)</span>
+            <span class="item">{{ t('cpuHealth.scoring.microcodeFixed') }}</span>
             <span class="status" :class="report.microcodeInfo.isFixed ? 'good' : 'bad'">
-              {{ report.microcodeInfo.isFixed ? '已修复' : '未修复' }}
+              {{ report.microcodeInfo.isFixed ? t('cpuHealth.scoring.fixed') : t('cpuHealth.scoring.notFixed') }}
             </span>
-            <span class="score">{{ report.microcodeInfo.isFixed ? '+0分' : '+20分' }}</span>
+            <span class="score">{{ report.microcodeInfo.isFixed ? '+0' : '+20' }}</span>
           </div>
           <div class="scoring-row">
-            <span class="item">30天内WHEA硬件错误</span>
+            <span class="item">{{ t('cpuHealth.scoring.wheaErrors30Days') }}</span>
             <span class="status" :class="report.wheaErrorCount > 0 ? 'bad' : 'good'">
-              {{ report.wheaErrorCount }} 条
+              {{ t('cpuHealth.scoring.count', { count: report.wheaErrorCount }) }}
             </span>
-            <span class="score">+{{ Math.min(report.wheaErrorCount * 5, 25) }}分 (每条+5，上限25)</span>
+            <span class="score">+{{ Math.min(report.wheaErrorCount * 5, 25) }} ({{ t('cpuHealth.scoring.perItem5Max25') }})</span>
           </div>
           <div class="scoring-row">
-            <span class="item">30天内系统崩溃/蓝屏</span>
+            <span class="item">{{ t('cpuHealth.scoring.crashes30Days') }}</span>
             <span class="status" :class="report.recentCrashes > 0 ? 'bad' : 'good'">
-              {{ report.recentCrashes }} 次
+              {{ t('cpuHealth.scoring.times', { count: report.recentCrashes }) }}
             </span>
-            <span class="score">+{{ Math.min(report.recentCrashes * 8, 25) }}分 (每次+8，上限25)</span>
+            <span class="score">+{{ Math.min(report.recentCrashes * 8, 25) }} ({{ t('cpuHealth.scoring.perItem8Max25') }})</span>
           </div>
           <div class="scoring-row total">
-            <span class="item">总计</span>
+            <span class="item">{{ t('cpuHealth.scoring.total') }}</span>
             <span class="status"></span>
-            <span class="score total-score">{{ report.riskScore }}/100分</span>
+            <span class="score total-score">{{ report.riskScore }}/100</span>
           </div>
         </div>
         <div class="scoring-legend">
-          <h4>风险等级划分：</h4>
+          <h4>{{ t('cpuHealth.scoring.riskLevels') }}</h4>
           <div class="legend-items">
-            <span class="legend-item safe">0-20: 安全</span>
-            <span class="legend-item low">21-40: 低风险</span>
-            <span class="legend-item medium">41-60: 中等风险</span>
-            <span class="legend-item high">61-80: 高风险</span>
-            <span class="legend-item critical">81-100: 严重风险</span>
+            <span class="legend-item safe">{{ t('cpuHealth.scoring.safe') }}</span>
+            <span class="legend-item low">{{ t('cpuHealth.scoring.low') }}</span>
+            <span class="legend-item medium">{{ t('cpuHealth.scoring.medium') }}</span>
+            <span class="legend-item high">{{ t('cpuHealth.scoring.high') }}</span>
+            <span class="legend-item critical">{{ t('cpuHealth.scoring.critical') }}</span>
           </div>
         </div>
       </div>
 
       <!-- 检测方法说明 -->
       <details class="details-card method">
-        <summary>🔬 检测方法说明</summary>
+        <summary>{{ t('cpuHealth.method.title') }}</summary>
         <div class="details-content method-content">
           <div class="method-section">
-            <h4>1. CPU型号识别</h4>
-            <p>通过WMI查询 <code>Win32_Processor</code> 获取CPU名称，使用正则表达式 <code>/I[579]-1[34]\d{3}K/</code> 匹配13/14代K系列处理器。</p>
-            <p><strong>受影响型号：</strong>i9-14900K/KF/KS、i7-14700K/KF、i9-13900K/KF/KS、i7-13700K/KF、i5-13600K/KF</p>
+            <h4>{{ t('cpuHealth.method.cpuIdentification') }}</h4>
+            <p>{{ t('cpuHealth.method.cpuIdentificationDesc') }}</p>
+            <p><strong>{{ t('cpuHealth.method.affectedModels') }}</strong>{{ t('cpuHealth.method.affectedModelsList') }}</p>
           </div>
           <div class="method-section">
-            <h4>2. 微码版本检测</h4>
-            <p>从注册表 <code>HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0</code> 读取 "Update Revision" 值。</p>
-            <p><strong>修复版本：</strong>Intel于2024年8月发布微码 0x0125/0x0129，可防止进一步退化。</p>
+            <h4>{{ t('cpuHealth.method.microcodeDetection') }}</h4>
+            <p>{{ t('cpuHealth.method.microcodeDetectionDesc') }}</p>
+            <p><strong>{{ t('cpuHealth.method.fixedVersion') }}</strong>{{ t('cpuHealth.method.fixedVersionDesc') }}</p>
           </div>
           <div class="method-section">
-            <h4>3. WHEA错误分析</h4>
-            <p>查询Windows事件日志中的 <code>Microsoft-Windows-WHEA-Logger</code> 事件，检测硬件错误。</p>
-            <p><strong>关键事件ID：</strong>17(已更正错误)、18(致命错误)、19(缓存错误)、47(处理器核心错误)</p>
+            <h4>{{ t('cpuHealth.method.wheaAnalysis') }}</h4>
+            <p>{{ t('cpuHealth.method.wheaAnalysisDesc') }}</p>
+            <p><strong>{{ t('cpuHealth.method.keyEventIds') }}</strong>{{ t('cpuHealth.method.keyEventIdsDesc') }}</p>
           </div>
           <div class="method-section">
-            <h4>4. 系统稳定性</h4>
-            <p>统计事件ID 41(Kernel-Power意外重启)和1001(BugCheck蓝屏)的发生次数。</p>
+            <h4>{{ t('cpuHealth.method.systemStability') }}</h4>
+            <p>{{ t('cpuHealth.method.systemStabilityDesc') }}</p>
           </div>
           <div class="method-section warning">
-            <h4>⚠️ 局限性说明</h4>
-            <p>本工具仅能检测软件可观测的指标。CPU是否已经发生不可逆退化，需要通过压力测试（如Prime95、OCCT）才能确定。</p>
-            <p>如频繁出现游戏崩溃、编译错误等问题，即使本工具显示低风险，也建议联系Intel进行RMA。</p>
+            <h4>{{ t('cpuHealth.method.limitations') }}</h4>
+            <p>{{ t('cpuHealth.method.limitationsDesc1') }}</p>
+            <p>{{ t('cpuHealth.method.limitationsDesc2') }}</p>
           </div>
         </div>
       </details>
 
       <!-- 详细分析 -->
       <details class="details-card">
-        <summary>📋 详细分析报告</summary>
+        <summary>{{ t('cpuHealth.details.title') }}</summary>
         <div class="details-content">
-          <pre>{{ report.detailedAnalysis.join('\n') }}</pre>
+          <pre>{{ getTranslatedDetailedAnalysis().join('\n') }}</pre>
         </div>
       </details>
 
       <!-- WHEA错误列表 -->
       <details v-if="report.wheaErrors.length > 0" class="details-card errors">
-        <summary>⚠️ 硬件错误日志 ({{ report.wheaErrors.length }}条)</summary>
+        <summary>{{ t('cpuHealth.details.wheaErrors', { count: report.wheaErrors.length }) }}</summary>
         <div class="details-content">
           <div v-for="(error, index) in report.wheaErrors" :key="index" class="error-item">
             <div class="error-time">{{ error.timeCreated }}</div>
@@ -203,8 +203,8 @@
 
       <!-- 压力测试工具 -->
       <div class="stress-test-card">
-        <h3>🔥 压力测试工具</h3>
-        <p class="stress-desc">软件检测只能发现已有的错误日志，要真正验证CPU稳定性，需要使用专业压力测试工具。</p>
+        <h3>{{ t('cpuHealth.relatedTools') }}</h3>
+        <p class="stress-desc">{{ t('cpuHealth.toolsDesc') }}</p>
         
         <!-- 专业工具推荐 -->
         <div class="pro-tools">
@@ -213,10 +213,11 @@
               <div class="tool-icon">{{ tool.icon }}</div>
               <div class="tool-info">
                 <h5>{{ tool.name }}</h5>
-                <p>{{ tool.description }}</p>
-                <p v-if="tool.note" class="tool-note">⚠️ {{ tool.note }}</p>
+                <p>{{ t(tool.descriptionKey) }}</p>
+                <p v-if="tool.noteKey" class="tool-note">⚠️ {{ t(tool.noteKey) }}</p>
                 <div class="tool-tags">
-                  <span v-for="tag in tool.tags" :key="tag" class="tag">{{ tag }}</span>
+                  <span class="tag">{{ t(tool.tag1Key) }}</span>
+                  <span class="tag">{{ t(tool.tag2Key) }}</span>
                 </div>
               </div>
               <div class="tool-actions">
@@ -231,10 +232,10 @@
                     {{ getToolProgress(tool) }}%
                   </template>
                   <template v-else>
-                    📥 下载
+                    📥 {{ t('cpuHealth.download') }}
                   </template>
                 </button>
-                <button class="btn-homepage" @click="openHomepage(tool)" title="访问官网">
+                <button class="btn-homepage" @click="openHomepage(tool)" :title="t('cpuHealth.openPage')">
                   🔗
                 </button>
               </div>
@@ -244,55 +245,55 @@
 
         <!-- 测试指南 -->
         <details class="test-guide">
-          <summary>📖 完整测试指南</summary>
+          <summary>{{ t('cpuHealth.guide.title') }}</summary>
           <div class="guide-content">
             <!-- Prime95 指南 -->
             <div class="guide-section">
               <div class="guide-header">
                 <span class="guide-icon">🔨</span>
-                <h4>Prime95 测试指南</h4>
-                <span class="guide-badge recommended">推荐首选</span>
+                <h4>{{ t('cpuHealth.guide.prime95.title') }}</h4>
+                <span class="guide-badge recommended">{{ t('cpuHealth.guide.prime95.recommended') }}</span>
               </div>
               <div class="guide-steps">
                 <div class="step">
                   <span class="step-num">1</span>
                   <div class="step-content">
-                    <strong>下载并解压</strong>
-                    <p>下载后解压到任意文件夹，运行 prime95.exe</p>
+                    <strong>{{ t('cpuHealth.guide.prime95.step1Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.prime95.step1Desc') }}</p>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">2</span>
                   <div class="step-content">
-                    <strong>选择测试模式</strong>
-                    <p>首次运行选择 "Just Stress Testing"，然后选择 <code>Blend</code> 测试（同时测试CPU和内存）</p>
+                    <strong>{{ t('cpuHealth.guide.prime95.step2Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.prime95.step2Desc') }}</p>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">3</span>
                   <div class="step-content">
-                    <strong>运行时长（行业标准）</strong>
+                    <strong>{{ t('cpuHealth.guide.prime95.step3Title') }}</strong>
                     <ul>
-                      <li><strong>快速检测：</strong>30分钟 - 可发现严重退化问题</li>
-                      <li><strong>标准检测：</strong>1-2小时 - 用户常用标准</li>
-                      <li><strong>完整检测：</strong>8-24小时 - 专业超频社区推荐</li>
+                      <li>{{ t('cpuHealth.guide.prime95.quick') }}</li>
+                      <li>{{ t('cpuHealth.guide.prime95.standard') }}</li>
+                      <li>{{ t('cpuHealth.guide.prime95.complete') }}</li>
                     </ul>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">4</span>
                   <div class="step-content">
-                    <strong>观察结果</strong>
+                    <strong>{{ t('cpuHealth.guide.prime95.step4Title') }}</strong>
                     <ul>
-                      <li>✅ <span class="text-success">通过</span>：所有Worker显示绿色，无错误提示</li>
-                      <li>❌ <span class="text-error">失败</span>：出现 "FATAL ERROR"、"Rounding Error" 或 "Hardware Error"</li>
-                      <li>💀 <span class="text-error">严重</span>：直接蓝屏(BSOD)或系统死机</li>
+                      <li>✅ <span class="text-success">{{ t('cpuHealth.guide.prime95.pass') }}</span>：{{ t('cpuHealth.guide.prime95.passDesc') }}</li>
+                      <li>❌ <span class="text-error">{{ t('cpuHealth.guide.prime95.fail') }}</span>：{{ t('cpuHealth.guide.prime95.failDesc') }}</li>
+                      <li>💀 <span class="text-error">{{ t('cpuHealth.guide.prime95.severe') }}</span>：{{ t('cpuHealth.guide.prime95.severeDesc') }}</li>
                     </ul>
                   </div>
                 </div>
               </div>
               <div class="guide-verdict">
-                <strong>判定标准：</strong>按照Intel官方和超频社区共识，如果在1小时内出现任何计算错误，说明CPU可能已发生 "Vmin Shift"（最低工作电压漂移），这是退化的明确信号，建议申请RMA。
+                <strong>{{ t('cpuHealth.guide.prime95.verdict') }}</strong>
               </div>
             </div>
 
@@ -300,50 +301,49 @@
             <div class="guide-section">
               <div class="guide-header">
                 <span class="guide-icon">🌡️</span>
-                <h4>OCCT 测试指南</h4>
-                <span class="guide-badge">全面检测</span>
+                <h4>{{ t('cpuHealth.guide.occt.title') }}</h4>
+                <span class="guide-badge">{{ t('cpuHealth.guide.occt.comprehensive') }}</span>
               </div>
               <div class="guide-steps">
                 <div class="step">
                   <span class="step-num">1</span>
                   <div class="step-content">
-                    <strong>安装并运行</strong>
-                    <p>安装后运行OCCT，选择 "CPU" 标签页</p>
+                    <strong>{{ t('cpuHealth.guide.occt.step1Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.occt.step1Desc') }}</p>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">2</span>
                   <div class="step-content">
-                    <strong>配置测试（推荐设置）</strong>
+                    <strong>{{ t('cpuHealth.guide.occt.step2Title') }}</strong>
                     <ul>
-                      <li>测试模式：<code>Extreme</code>（最严格）</li>
-                      <li>数据集：<code>Large</code>（测试更多缓存）</li>
-                      <li>✅ 勾选 "Auto Stop on Error"（发现错误自动停止）</li>
-                      <li>✅ 勾选 "Error Detection"（启用错误检测）</li>
+                      <li>{{ t('cpuHealth.guide.occt.mode') }}<code>{{ t('cpuHealth.guide.occt.modeValue') }}</code></li>
+                      <li>{{ t('cpuHealth.guide.occt.dataset') }}<code>{{ t('cpuHealth.guide.occt.datasetValue') }}</code></li>
+                      <li>✅ Auto Stop on Error</li>
+                      <li>✅ Error Detection</li>
                     </ul>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">3</span>
                   <div class="step-content">
-                    <strong>运行测试</strong>
-                    <p>点击绿色播放按钮开始，建议测试时长 <strong>1-2小时</strong></p>
+                    <strong>{{ t('cpuHealth.guide.occt.step3Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.occt.durationDesc') }}</p>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">4</span>
                   <div class="step-content">
-                    <strong>查看结果</strong>
+                    <strong>{{ t('cpuHealth.guide.occt.step4Title') }}</strong>
                     <ul>
-                      <li>✅ <span class="text-success">通过</span>：界面保持绿色，Errors = 0</li>
-                      <li>❌ <span class="text-error">失败</span>：界面变红，显示错误数量 &gt; 0</li>
-                      <li>📊 同时关注左侧监控面板的温度/功耗曲线</li>
+                      <li>✅ <span class="text-success">{{ t('cpuHealth.guide.occt.errorFree') }}</span>：{{ t('cpuHealth.guide.occt.errorFreeDesc') }}</li>
+                      <li>❌ <span class="text-error">{{ t('cpuHealth.guide.occt.errorDetected') }}</span>：{{ t('cpuHealth.guide.occt.errorDetectedDesc') }}</li>
                     </ul>
                   </div>
                 </div>
               </div>
               <div class="guide-verdict">
-                <strong>判定标准：</strong>OCCT 的错误检测功能非常敏感，任何计算错误（Errors &gt; 0）都表明CPU核心存在问题。OCCT 也会生成详细的测试报告供参考。
+                <strong>{{ t('cpuHealth.guide.occt.occtAdvantage') }}</strong>
               </div>
             </div>
 
@@ -351,52 +351,52 @@
             <div class="guide-section">
               <div class="guide-header">
                 <span class="guide-icon">🎯</span>
-                <h4>Intel XTU 测试指南</h4>
-                <span class="guide-badge official">官方工具</span>
+                <h4>{{ t('cpuHealth.guide.xtu.title') }}</h4>
+                <span class="guide-badge official">{{ t('cpuHealth.guide.xtu.official') }}</span>
               </div>
               <div class="guide-steps">
                 <div class="step">
                   <span class="step-num">1</span>
                   <div class="step-content">
-                    <strong>版本选择</strong>
+                    <strong>{{ t('cpuHealth.guide.xtu.step1Title') }}</strong>
                     <ul>
-                      <li><strong>13/14代酷睿：</strong>使用 XTU 7.14 版本</li>
-                      <li><strong>Core Ultra 系列：</strong>使用 XTU 10.0+ 版本</li>
+                      <li><strong>{{ t('cpuHealth.guide.xtu.gen13_14') }}</strong>{{ t('cpuHealth.guide.xtu.gen13_14Desc') }}</li>
+                      <li><strong>{{ t('cpuHealth.guide.xtu.coreUltra') }}</strong>{{ t('cpuHealth.guide.xtu.coreUltraDesc') }}</li>
                     </ul>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">2</span>
                   <div class="step-content">
-                    <strong>查看关键信息</strong>
+                    <strong>{{ t('cpuHealth.guide.xtu.step2Title') }}</strong>
                     <ul>
-                      <li><strong>微码版本：</strong>确认是否已更新至 0x125 或更高</li>
-                      <li><strong>Package TDP：</strong>当前功耗限制</li>
-                      <li><strong>Core Voltage：</strong>核心电压是否正常</li>
+                      <li><strong>{{ t('cpuHealth.guide.xtu.microcodeVersion') }}</strong>{{ t('cpuHealth.guide.xtu.microcodeVersionDesc') }}</li>
+                      <li><strong>{{ t('cpuHealth.guide.xtu.packageTdp') }}</strong>{{ t('cpuHealth.guide.xtu.packageTdpDesc') }}</li>
+                      <li><strong>{{ t('cpuHealth.guide.xtu.coreVoltage') }}</strong>{{ t('cpuHealth.guide.xtu.coreVoltageDesc') }}</li>
                     </ul>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">3</span>
                   <div class="step-content">
-                    <strong>运行基准测试</strong>
-                    <p>点击 "Benchmarking" → 运行 "CPU Benchmark"，记录分数用于对比</p>
+                    <strong>{{ t('cpuHealth.guide.xtu.step3Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.xtu.step3Desc') }}</p>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">4</span>
                   <div class="step-content">
-                    <strong>运行压力测试</strong>
-                    <p>点击 "Stress Test" → 勾选 "CPU Stress Test" → 运行至少30分钟</p>
+                    <strong>{{ t('cpuHealth.guide.xtu.step4Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.xtu.step4Desc') }}</p>
                   </div>
                 </div>
               </div>
               <div class="guide-verdict">
-                <strong>判定标准：</strong>
+                <strong>{{ t('cpuHealth.guide.xtu.verdictTitle') }}</strong>
                 <ul style="margin-top: 8px;">
-                  <li>基准分数与同型号 CPU 正常分数相比下降 &gt;10% 可能表明退化</li>
-                  <li>压力测试中出现频繁降频或温度墙触发异常早</li>
-                  <li>查看 Windows 事件查看器是否有 WHEA 错误（硬件错误）</li>
+                  <li>{{ t('cpuHealth.guide.xtu.verdict1') }}</li>
+                  <li>{{ t('cpuHealth.guide.xtu.verdict2') }}</li>
+                  <li>{{ t('cpuHealth.guide.xtu.verdict3') }}</li>
                 </ul>
               </div>
             </div>
@@ -405,44 +405,44 @@
             <div class="guide-section">
               <div class="guide-header">
                 <span class="guide-icon">📊</span>
-                <h4>HWiNFO64 监控指南</h4>
-                <span class="guide-badge">配合使用</span>
+                <h4>{{ t('cpuHealth.guide.hwinfo.title') }}</h4>
+                <span class="guide-badge">{{ t('cpuHealth.guide.hwinfo.companion') }}</span>
               </div>
               <div class="guide-steps">
                 <div class="step">
                   <span class="step-num">1</span>
                   <div class="step-content">
-                    <strong>启动监控</strong>
-                    <p>运行时选择 "Sensors-only" 模式，打开实时监控面板</p>
+                    <strong>{{ t('cpuHealth.guide.hwinfo.step1Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.hwinfo.step1Desc') }}</p>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">2</span>
                   <div class="step-content">
-                    <strong>关注的关键指标（行业参考值）</strong>
+                    <strong>{{ t('cpuHealth.guide.hwinfo.step2Title') }}</strong>
                     <ul>
-                      <li><strong>CPU Package Power：</strong>i9-14900K 默认最高 253W，i7 最高 253W，i5 最高 181W</li>
-                      <li><strong>CPU Package Temp：</strong>压测时应 &lt;100°C，日常 &lt;80°C</li>
-                      <li><strong>VID / Vcore：</strong>正常范围 0.85-1.45V（取决于负载）</li>
-                      <li><strong>CPU IA Cores (WHEA Errors)：</strong>应始终为 0</li>
+                      <li><strong>{{ t('cpuHealth.guide.hwinfo.packagePower') }}</strong>{{ t('cpuHealth.guide.hwinfo.packagePowerDesc') }}</li>
+                      <li><strong>{{ t('cpuHealth.guide.hwinfo.packageTemp') }}</strong>{{ t('cpuHealth.guide.hwinfo.packageTempDesc') }}</li>
+                      <li><strong>{{ t('cpuHealth.guide.hwinfo.voltage') }}</strong>{{ t('cpuHealth.guide.hwinfo.voltageDesc') }}</li>
+                      <li><strong>{{ t('cpuHealth.guide.hwinfo.wheaErrors') }}</strong>{{ t('cpuHealth.guide.hwinfo.wheaErrorsDesc') }}</li>
                     </ul>
                   </div>
                 </div>
                 <div class="step">
                   <span class="step-num">3</span>
                   <div class="step-content">
-                    <strong>配合压测使用</strong>
-                    <p>运行Prime95/OCCT时保持HWiNFO64开启，观察是否有异常降频或WHEA错误累积</p>
+                    <strong>{{ t('cpuHealth.guide.hwinfo.step3Title') }}</strong>
+                    <p>{{ t('cpuHealth.guide.hwinfo.step3Desc') }}</p>
                   </div>
                 </div>
               </div>
               <div class="guide-verdict">
-                <strong>异常信号：</strong>
+                <strong>{{ t('cpuHealth.guide.hwinfo.verdictTitle') }}</strong>
                 <ul style="margin-top: 8px;">
-                  <li>⚠️ WHEA错误计数 &gt; 0（最明确的退化信号）</li>
-                  <li>⚠️ 压测时频率无法维持正常睿频</li>
-                  <li>⚠️ 相同负载下温度/功耗比以前明显升高</li>
-                  <li>⚠️ 需要比出厂默认更高的电压才能稳定</li>
+                  <li>{{ t('cpuHealth.guide.hwinfo.verdict1') }}</li>
+                  <li>{{ t('cpuHealth.guide.hwinfo.verdict2') }}</li>
+                  <li>{{ t('cpuHealth.guide.hwinfo.verdict3') }}</li>
+                  <li>{{ t('cpuHealth.guide.hwinfo.verdict4') }}</li>
                 </ul>
               </div>
             </div>
@@ -451,39 +451,39 @@
             <div class="guide-section final-verdict">
               <div class="guide-header">
                 <span class="guide-icon">⚖️</span>
-                <h4>综合判断标准（业界共识）</h4>
+                <h4>{{ t('cpuHealth.guide.finalVerdict.title') }}</h4>
               </div>
               <div class="verdict-grid">
                 <div class="verdict-item good">
                   <div class="verdict-icon">✅</div>
                   <div class="verdict-text">
-                    <strong>CPU正常</strong>
-                    <p>Prime95 Blend 运行4小时+无错误，HWiNFO显示 WHEA Errors = 0，游戏/工作稳定</p>
+                    <strong>{{ t('cpuHealth.guide.finalVerdict.goodTitle') }}</strong>
+                    <p>{{ t('cpuHealth.guide.finalVerdict.goodDesc') }}</p>
                   </div>
                 </div>
                 <div class="verdict-item warning">
                   <div class="verdict-icon">⚠️</div>
                   <div class="verdict-text">
-                    <strong>可能退化</strong>
-                    <p>偶发计算错误、性能下降明显、需要降频/加电压才能稳定运行、WHEA错误偶发</p>
+                    <strong>{{ t('cpuHealth.guide.finalVerdict.warningTitle') }}</strong>
+                    <p>{{ t('cpuHealth.guide.finalVerdict.warningDesc') }}</p>
                   </div>
                 </div>
                 <div class="verdict-item bad">
                   <div class="verdict-icon">❌</div>
                   <div class="verdict-text">
-                    <strong>建议RMA</strong>
-                    <p>30分钟内报错、频繁蓝屏、无法通过标准压测、WHEA错误持续增长</p>
+                    <strong>{{ t('cpuHealth.guide.finalVerdict.badTitle') }}</strong>
+                    <p>{{ t('cpuHealth.guide.finalVerdict.badDesc') }}</p>
                   </div>
                 </div>
               </div>
               <div class="rma-info">
-                <h5>🔧 Intel RMA 流程（官方确认）：</h5>
+                <h5>{{ t('cpuHealth.guide.finalVerdict.rmaTitle') }}</h5>
                 <ol>
-                  <li>访问 <a href="#" @click.prevent="openUrl('https://www.intel.cn/content/www/cn/zh/support/articles/000005862/processors.html')">Intel中国支持页面</a> 或 <a href="#" @click.prevent="openUrl('https://www.intel.com/content/www/us/en/support/contact-us.html')">Intel全球支持</a></li>
-                  <li>准备好CPU序列号（FPO/ATPO，在CPU顶盖或包装盒上）</li>
-                  <li>描述问题症状，最好附上 Prime95/OCCT 错误截图</li>
-                  <li><strong>重要：</strong>Intel已宣布受影响的13/14代K系列CPU保修延长至5年</li>
-                  <li>Intel会安排免费更换，且更换的CPU会包含修复微码</li>
+                  <li>{{ t('cpuHealth.guide.finalVerdict.rmaStep1') }}</li>
+                  <li>{{ t('cpuHealth.guide.finalVerdict.rmaStep2') }}</li>
+                  <li>{{ t('cpuHealth.guide.finalVerdict.rmaStep3') }}</li>
+                  <li><strong>{{ t('cpuHealth.guide.finalVerdict.rmaStep4') }}</strong></li>
+                  <li>{{ t('cpuHealth.guide.finalVerdict.rmaStep5') }}</li>
                 </ol>
               </div>
             </div>
@@ -495,32 +495,19 @@
     <!-- 初始状态 -->
     <div v-else class="empty-state">
       <div class="empty-icon">🔬</div>
-      <h2>Intel CPU健康检测</h2>
-      <p>检测您的CPU是否受Intel 13/14代"缩缸"问题影响</p>
+      <h2>{{ t('cpuHealth.title') }}</h2>
+      <p>{{ t('cpuHealth.notStarted') }}</p>
       <div class="feature-list">
-        <div class="feature-item">✓ 识别受影响CPU型号</div>
-        <div class="feature-item">✓ 检测微码修复版本</div>
-        <div class="feature-item">✓ 分析系统稳定性日志</div>
-        <div class="feature-item">✓ 评估风险等级</div>
-        <div class="feature-item">✓ 提供修复建议</div>
+        <div class="feature-item">✓ {{ t('cpuHealth.subtitle') }}</div>
       </div>
     </div>
 
     <!-- 信息说明 -->
     <div class="info-footer">
       <details>
-        <summary>ℹ️ 关于Intel 13/14代"缩缸"问题</summary>
+        <summary>{{ t('cpuHealth.disclaimer') }}</summary>
         <div class="info-content">
-          <p><strong>问题概述：</strong>Intel第13、14代桌面处理器（Raptor Lake）存在稳定性问题，主要影响K系列高性能型号。</p>
-          <p><strong>问题原因：</strong>过高的eTVB电压请求导致CPU内部电路逐渐退化。</p>
-          <p><strong>主要症状：</strong>游戏崩溃、蓝屏死机(BSOD)、系统不稳定、编译错误等。</p>
-          <p><strong>Intel解决方案：</strong></p>
-          <ul>
-            <li>发布微码更新（0x125/0x129）限制电压</li>
-            <li>将受影响CPU保修期延长至5年</li>
-            <li>提供RMA更换服务</li>
-          </ul>
-          <p><strong>注意：</strong>微码更新只能防止进一步损坏，无法恢复已经退化的CPU。</p>
+          <p>{{ t('cpuHealth.disclaimerText') }}</p>
         </div>
       </details>
     </div>
@@ -529,6 +516,21 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+interface DetailedAnalysisData {
+  cpuName: string
+  cores: number
+  threads: number
+  microcodeVersion: string
+  biosDate: string
+  isAffected: boolean
+  wheaErrorCount: number
+  crashCount: number
+  wheaErrors: Array<{ time: string; type: string }>
+}
 
 interface CpuHealthReport {
   timestamp: string
@@ -539,6 +541,8 @@ interface CpuHealthReport {
   }
   isAffectedCpu: boolean
   affectedReason: string
+  affectedReasonKey?: string
+  affectedReasonParams?: Record<string, string>
   microcodeInfo: {
     version: string
     isFixed: boolean
@@ -554,15 +558,19 @@ interface CpuHealthReport {
   riskLevel: 'safe' | 'low' | 'medium' | 'high' | 'critical'
   riskScore: number
   recommendations: string[]
+  recommendationKeys?: Array<{ key: string; params?: Record<string, string | number> }>
   detailedAnalysis: string[]
+  detailedAnalysisData?: DetailedAnalysisData
 }
 
 interface ToolInfo {
   id: string
   name: string
   icon: string
-  description: string
-  tags: string[]
+  descriptionKey: string // Translation key for description
+  tag1Key: string // Translation key for first tag
+  tag2Key: string // Translation key for second tag
+  noteKey?: string // Translation key for note
   downloads: {
     x64?: { url: string, filename: string }
     x86?: { url: string, filename: string }
@@ -570,17 +578,17 @@ interface ToolInfo {
     universal?: { url: string, filename: string }
   }
   homepage: string
-  note?: string  // 特别提示
 }
 
-// 工具定义
+// Tool definitions using translation keys
 const tools: ToolInfo[] = [
   {
     id: 'prime95',
     name: 'Prime95',
     icon: '🔨',
-    description: '经典的CPU压力测试工具，使用高强度数学运算检验稳定性。推荐运行"Blend"测试至少1小时。',
-    tags: ['免费', '经典'],
+    descriptionKey: 'cpuHealth.tools.prime95.description',
+    tag1Key: 'cpuHealth.tools.prime95.tag1',
+    tag2Key: 'cpuHealth.tools.prime95.tag2',
     downloads: {
       x64: { url: 'https://www.mersenne.org/download/software/v30/30.19/p95v3019b20.win64.zip', filename: 'Prime95_v30.19b20_Win64.zip' },
       x86: { url: 'https://www.mersenne.org/download/software/v30/30.19/p95v3019b20.win32.zip', filename: 'Prime95_v30.19b20_Win32.zip' }
@@ -591,8 +599,9 @@ const tools: ToolInfo[] = [
     id: 'occt',
     name: 'OCCT',
     icon: '🌡️',
-    description: '全方位系统稳定性测试工具，支持CPU、GPU、内存测试，并实时监控温度和电压。',
-    tags: ['免费', '全面'],
+    descriptionKey: 'cpuHealth.tools.occt.description',
+    tag1Key: 'cpuHealth.tools.occt.tag1',
+    tag2Key: 'cpuHealth.tools.occt.tag2',
     downloads: {
       universal: { url: 'https://www.ocbase.com/download/edition:Personal', filename: 'OCCT_Personal.exe' }
     },
@@ -602,20 +611,22 @@ const tools: ToolInfo[] = [
     id: 'xtu',
     name: 'Intel XTU',
     icon: '🎯',
-    description: 'Intel官方超频工具，可查看详细的CPU信息、温度和功耗，适合检测和调整Intel CPU设置。',
-    tags: ['官方', 'Intel专用'],
+    descriptionKey: 'cpuHealth.tools.xtu.description',
+    tag1Key: 'cpuHealth.tools.xtu.tag1',
+    tag2Key: 'cpuHealth.tools.xtu.tag2',
+    noteKey: 'cpuHealth.tools.xtu.note',
     downloads: {
       universal: { url: 'https://downloadmirror.intel.com/833755/XTUSetup.exe', filename: 'Intel_XTU_Setup.exe' }
     },
-    homepage: 'https://www.intel.com/content/www/us/en/download/17881/intel-extreme-tuning-utility-intel-xtu.html',
-    note: '注意：7.14版本适用于13/14代酷睿，Core Ultra系列需下载10.0+版本'
+    homepage: 'https://www.intel.com/content/www/us/en/download/17881/intel-extreme-tuning-utility-intel-xtu.html'
   },
   {
     id: 'hwinfo',
     name: 'HWiNFO64',
     icon: '📊',
-    description: '硬件监控工具，实时显示CPU温度、电压、功耗等信息，可配合压测工具使用监控状态。',
-    tags: ['免费', '监控'],
+    descriptionKey: 'cpuHealth.tools.hwinfo.description',
+    tag1Key: 'cpuHealth.tools.hwinfo.tag1',
+    tag2Key: 'cpuHealth.tools.hwinfo.tag2',
     downloads: {
       x64: { url: 'https://www.sac.sk/download/utildiag/hwi_808.exe', filename: 'HWiNFO64_v8.08.exe' },
       universal: { url: 'https://www.sac.sk/download/utildiag/hwi_808.zip', filename: 'HWiNFO_v8.08_Portable.zip' }
@@ -698,13 +709,72 @@ function getRiskIcon(level: string): string {
 
 function getRiskLevelText(level: string): string {
   switch (level) {
-    case 'safe': return '安全'
-    case 'low': return '低风险'
-    case 'medium': return '中等风险'
-    case 'high': return '高风险'
-    case 'critical': return '严重风险'
-    default: return '未知'
+    case 'safe': return t('cpuHealth.status.safe')
+    case 'low': return t('cpuHealth.status.low')
+    case 'medium': return t('cpuHealth.status.medium')
+    case 'high': return t('cpuHealth.status.high')
+    case 'critical': return t('cpuHealth.status.critical')
+    default: return t('desktop.unknown')
   }
+}
+
+// Translate the affected reason from backend
+function getTranslatedReason(): string {
+  if (!report.value) return ''
+  // Use translation key if available, otherwise fall back to raw reason
+  if (report.value.affectedReasonKey) {
+    return t(`cpuHealth.reasons.${report.value.affectedReasonKey}`, report.value.affectedReasonParams || {})
+  }
+  return report.value.affectedReason
+}
+
+// Translate recommendations from backend
+function getTranslatedRecommendations(): string[] {
+  if (!report.value) return []
+  // Use translation keys if available, otherwise fall back to raw recommendations
+  if (report.value.recommendationKeys && report.value.recommendationKeys.length > 0) {
+    return report.value.recommendationKeys.map(rec => 
+      t(`cpuHealth.recommendationKeys.${rec.key}`, rec.params || {})
+    )
+  }
+  return report.value.recommendations
+}
+
+// Translate detailed analysis from backend
+function getTranslatedDetailedAnalysis(): string[] {
+  if (!report.value) return []
+  const data = report.value.detailedAnalysisData
+  if (!data) return report.value.detailedAnalysis
+  
+  const analysis: string[] = []
+  
+  analysis.push(t('cpuHealth.analysis.cpuModel', { name: data.cpuName }))
+  analysis.push(t('cpuHealth.analysis.coresThreads', { cores: data.cores, threads: data.threads }))
+  analysis.push(t('cpuHealth.analysis.microcodeVersion', { version: data.microcodeVersion }))
+  analysis.push(t('cpuHealth.analysis.biosDate', { date: data.biosDate }))
+  
+  if (data.isAffected) {
+    analysis.push('')
+    analysis.push(t('cpuHealth.analysis.issueExplanation'))
+    analysis.push(t('cpuHealth.analysis.issueCause'))
+    analysis.push(t('cpuHealth.analysis.issueSymptoms'))
+    analysis.push(t('cpuHealth.analysis.intelResponse'))
+  }
+  
+  if (data.wheaErrorCount > 0) {
+    analysis.push('')
+    analysis.push(t('cpuHealth.analysis.wheaErrorsDetected', { count: data.wheaErrorCount }))
+    data.wheaErrors.forEach(e => {
+      analysis.push(`  - [${e.time}] ${e.type}`)
+    })
+  }
+  
+  if (data.crashCount > 0) {
+    analysis.push('')
+    analysis.push(t('cpuHealth.analysis.crashesDetected', { count: data.crashCount }))
+  }
+  
+  return analysis
 }
 
 function getDownloadInfo(tool: ToolInfo): { url: string, filename: string } | null {

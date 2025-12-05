@@ -1,6 +1,6 @@
 <template>
   <div class="apps-view">
-    <h1 class="page-title">应用启动 🚀</h1>
+    <h1 class="page-title">{{ t('apps.title') }}</h1>
 
     <!-- 搜索栏 -->
     <div class="search-section card">
@@ -9,7 +9,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="搜索应用..."
+          :placeholder="t('apps.searchPlaceholder')"
           @input="handleSearch"
         />
         <span v-if="searchQuery" class="clear-btn" @click="clearSearch">✕</span>
@@ -18,7 +18,7 @@
 
     <!-- 收藏的应用 -->
     <div class="favorites-section mt-md" v-if="favorites.length > 0">
-      <h3 class="section-title">⭐ 收藏的应用</h3>
+      <h3 class="section-title">{{ t('apps.favorites') }}</h3>
       <div class="app-grid">
         <div
           v-for="app in favorites"
@@ -30,7 +30,7 @@
           <div class="app-info">
             <span class="app-name">{{ app.name }}</span>
           </div>
-          <button class="remove-btn" @click.stop="removeFavorite(app.path)" title="取消收藏">
+          <button class="remove-btn" @click.stop="removeFavorite(app.path)" :title="t('apps.removeFavorite')">
             ⭐
           </button>
         </div>
@@ -40,7 +40,7 @@
     <!-- 搜索结果/所有应用 -->
     <div class="apps-section mt-lg">
       <h3 class="section-title">
-        {{ searchQuery ? '🔍 搜索结果' : '📋 所有应用' }}
+        {{ searchQuery ? t('apps.searchResults') : t('apps.allApps') }}
         <span class="count">({{ filteredApps.length }})</span>
       </h3>
 
@@ -57,7 +57,7 @@
 
       <div v-else-if="filteredApps.length === 0" class="empty-state">
         <span class="empty-icon">📭</span>
-        <span>{{ searchQuery ? '未找到匹配的应用' : '没有发现已安装的应用' }}</span>
+        <span>{{ searchQuery ? t('apps.noResults') : t('apps.noApps') }}</span>
       </div>
 
       <div v-else class="app-list">
@@ -76,11 +76,11 @@
             <button
               class="action-btn"
               @click.stop="toggleFavorite(app)"
-              :title="isFavorite(app) ? '取消收藏' : '添加收藏'"
+              :title="isFavorite(app) ? t('apps.removeFavorite') : t('apps.addFavorite')"
             >
               {{ isFavorite(app) ? '⭐' : '☆' }}
             </button>
-            <button class="action-btn launch" @click.stop="launchApp(app.path)" title="启动">
+            <button class="action-btn launch" @click.stop="launchApp(app.path)" :title="t('apps.launch')">
               ▶
             </button>
           </div>
@@ -91,8 +91,8 @@
     <!-- 最近使用 -->
     <div class="recent-section mt-lg" v-if="recentApps.length > 0">
       <div class="section-header flex-between">
-        <h3 class="section-title">🕐 最近使用</h3>
-        <button class="btn btn-secondary" @click="clearRecent">清除</button>
+        <h3 class="section-title">{{ t('apps.recentApps') }}</h3>
+        <button class="btn btn-secondary" @click="clearRecent">{{ t('apps.clear') }}</button>
       </div>
       <div class="recent-list">
         <div
@@ -111,6 +111,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface AppInfo {
   name: string

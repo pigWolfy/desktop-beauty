@@ -1,15 +1,15 @@
 <template>
   <div class="settings-view">
-    <h1 class="page-title">设置 ⚙️</h1>
+    <h1 class="page-title">{{ t('settings.title') }}</h1>
 
     <!-- 通用设置 -->
     <div class="settings-section">
-      <h3 class="section-title">🔧 通用设置</h3>
+      <h3 class="section-title">{{ t('settings.general') }}</h3>
       <div class="settings-card card">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">开机自启动</span>
-            <span class="setting-desc">系统启动时自动运行 Desktop Beauty</span>
+            <span class="setting-label">{{ t('settings.autoStart') }}</span>
+            <span class="setting-desc">{{ t('settings.autoStartDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.autoStart">
@@ -19,8 +19,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">最小化到托盘</span>
-            <span class="setting-desc">关闭窗口时最小化到系统托盘</span>
+            <span class="setting-label">{{ t('settings.minimizeToTray') }}</span>
+            <span class="setting-desc">{{ t('settings.minimizeToTrayDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.minimizeToTray">
@@ -30,8 +30,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">启动时隐藏窗口</span>
-            <span class="setting-desc">程序启动后直接最小化到托盘</span>
+            <span class="setting-label">{{ t('settings.startMinimized') }}</span>
+            <span class="setting-desc">{{ t('settings.startMinimizedDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.startMinimized">
@@ -41,33 +41,45 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">桌面小组件</span>
-            <span class="setting-desc">在桌面上显示快捷操作小组件</span>
+            <span class="setting-label">{{ t('settings.showWidget') }}</span>
+            <span class="setting-desc">{{ t('settings.showWidgetDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.showWidget">
             <span class="slider"></span>
           </label>
         </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">{{ t('settings.language') }}</span>
+            <span class="setting-desc">{{ t('settings.languageDesc') }}</span>
+          </div>
+          <select v-model="settings.language" class="select-box" @change="onLanguageChange">
+            <option v-for="locale in availableLocales" :key="locale.value" :value="locale.value">
+              {{ locale.label }}
+            </option>
+          </select>
+        </div>
       </div>
     </div>
 
     <!-- 快捷键设置 -->
     <div class="settings-section mt-lg">
-      <h3 class="section-title">⌨️ 快捷键</h3>
+      <h3 class="section-title">{{ t('settings.shortcuts') }}</h3>
       <div class="settings-card card">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">显示/隐藏主窗口</span>
-            <span class="setting-desc">快速切换主窗口的显示状态</span>
+            <span class="setting-label">{{ t('settings.showHideWindow') }}</span>
+            <span class="setting-desc">{{ t('settings.showHideWindowDesc') }}</span>
           </div>
           <kbd class="shortcut-key">Alt + D</kbd>
         </div>
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">快捷启动器</span>
-            <span class="setting-desc">打开应用快捷启动器</span>
+            <span class="setting-label">{{ t('settings.quickLauncher') }}</span>
+            <span class="setting-desc">{{ t('settings.quickLauncherDesc') }}</span>
           </div>
           <kbd class="shortcut-key">Alt + Space</kbd>
         </div>
@@ -76,25 +88,25 @@
 
     <!-- 桌面管理设置 -->
     <div class="settings-section mt-lg">
-      <h3 class="section-title">🖥️ 桌面管理</h3>
+      <h3 class="section-title">{{ t('settings.desktopSettings') }}</h3>
       <div class="settings-card card">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">默认排序方式</span>
-            <span class="setting-desc">整理桌面时的默认排序规则</span>
+            <span class="setting-label">{{ t('settings.defaultSort') }}</span>
+            <span class="setting-desc">{{ t('settings.defaultSortDesc') }}</span>
           </div>
           <select v-model="settings.defaultSort" class="select-box">
-            <option value="name">按名称</option>
-            <option value="type">按类型</option>
-            <option value="date">按日期</option>
-            <option value="size">按大小</option>
+            <option value="name">{{ t('desktop.sortByName') }}</option>
+            <option value="type">{{ t('desktop.sortByType') }}</option>
+            <option value="date">{{ t('desktop.sortByDate') }}</option>
+            <option value="size">{{ t('desktop.sortBySize') }}</option>
           </select>
         </div>
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">自动分组</span>
-            <span class="setting-desc">整理时自动按类型创建文件夹</span>
+            <span class="setting-label">{{ t('settings.autoGroup') }}</span>
+            <span class="setting-desc">{{ t('settings.autoGroupDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.autoGroup">
@@ -106,12 +118,12 @@
 
     <!-- 壁纸设置 -->
     <div class="settings-section mt-lg">
-      <h3 class="section-title">🖼️ 壁纸设置</h3>
+      <h3 class="section-title">{{ t('settings.wallpaperSettings') }}</h3>
       <div class="settings-card card">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">自动轮换</span>
-            <span class="setting-desc">自动切换壁纸</span>
+            <span class="setting-label">{{ t('settings.wallpaperSlideshow') }}</span>
+            <span class="setting-desc">{{ t('settings.wallpaperSlideshowDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.wallpaperSlideshow">
@@ -121,15 +133,15 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">轮换间隔</span>
-            <span class="setting-desc">自动切换壁纸的时间间隔</span>
+            <span class="setting-label">{{ t('settings.wallpaperInterval') }}</span>
+            <span class="setting-desc">{{ t('settings.wallpaperIntervalDesc') }}</span>
           </div>
           <select v-model="settings.wallpaperInterval" class="select-box" :disabled="!settings.wallpaperSlideshow">
-            <option :value="5">5 分钟</option>
-            <option :value="15">15 分钟</option>
-            <option :value="30">30 分钟</option>
-            <option :value="60">1 小时</option>
-            <option :value="120">2 小时</option>
+            <option :value="5">5 {{ t('wallpaper.minutes') }}</option>
+            <option :value="15">15 {{ t('wallpaper.minutes') }}</option>
+            <option :value="30">30 {{ t('wallpaper.minutes') }}</option>
+            <option :value="60">1 {{ t('wallpaper.hours') }}</option>
+            <option :value="120">2 {{ t('wallpaper.hours') }}</option>
           </select>
         </div>
       </div>
@@ -137,24 +149,24 @@
 
     <!-- 监控设置 -->
     <div class="settings-section mt-lg">
-      <h3 class="section-title">📊 系统监控</h3>
+      <h3 class="section-title">{{ t('settings.monitorSettings') }}</h3>
       <div class="settings-card card">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">刷新间隔</span>
-            <span class="setting-desc">系统监控数据的刷新频率</span>
+            <span class="setting-label">{{ t('settings.monitorInterval') }}</span>
+            <span class="setting-desc">{{ t('settings.monitorIntervalDesc') }}</span>
           </div>
           <select v-model="settings.monitorInterval" class="select-box">
-            <option :value="1000">1 秒</option>
-            <option :value="2000">2 秒</option>
-            <option :value="5000">5 秒</option>
+            <option :value="1000">1s</option>
+            <option :value="2000">2s</option>
+            <option :value="5000">5s</option>
           </select>
         </div>
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">侧边栏显示系统状态</span>
-            <span class="setting-desc">在侧边栏底部显示 CPU 和内存使用率</span>
+            <span class="setting-label">{{ t('settings.showSidebarStats') }}</span>
+            <span class="setting-desc">{{ t('settings.showSidebarStatsDesc') }}</span>
           </div>
           <label class="switch">
             <input type="checkbox" v-model="settings.showSidebarStats">
@@ -166,56 +178,56 @@
 
     <!-- 关于 -->
     <div class="settings-section mt-lg" ref="aboutSection">
-      <h3 class="section-title">ℹ️ 关于</h3>
+      <h3 class="section-title">{{ t('settings.about') }}</h3>
       <div class="about-card card">
         <div class="about-logo">✨</div>
         <h2>Desktop Beauty</h2>
-        <p class="version">版本 {{ appVersion }}</p>
-        <p class="desc">一个优雅的桌面管理工具</p>
+        <p class="version">{{ t('settings.version') }} {{ appVersion }}</p>
+        <p class="desc">A beautiful desktop management tool</p>
         
         <!-- 更新检测 -->
         <div class="update-section">
           <div v-if="updateState === 'idle'" class="update-check">
             <button class="btn-update" @click="checkForUpdate" :disabled="isCheckingUpdate">
-              {{ isCheckingUpdate ? '检查中...' : '检查更新' }}
+              {{ isCheckingUpdate ? t('settings.checking') : t('settings.checkUpdate') }}
             </button>
           </div>
           
           <div v-else-if="updateState === 'available'" class="update-available">
-            <p class="update-hint">发现新版本 <span class="new-version">v{{ newVersion }}</span></p>
+            <p class="update-hint">{{ t('settings.newVersion') }} <span class="new-version">v{{ newVersion }}</span></p>
             <button class="btn-download" @click="downloadUpdate" :disabled="isDownloading">
-              {{ isDownloading ? `下载中 ${downloadProgress}%` : '立即更新' }}
+              {{ isDownloading ? `${t('settings.downloading')} ${downloadProgress}%` : t('settings.updateNow') }}
             </button>
           </div>
           
           <div v-else-if="updateState === 'downloaded'" class="update-ready">
-            <p class="update-hint">新版本已准备就绪</p>
-            <button class="btn-install" @click="installUpdate">重启并安装</button>
+            <p class="update-hint">{{ t('settings.downloadComplete') }}</p>
+            <button class="btn-install" @click="installUpdate">{{ t('settings.restartInstall') }}</button>
           </div>
           
           <div v-else-if="updateState === 'latest'" class="update-latest">
-            <span class="latest-badge">✓ 已是最新版本</span>
+            <span class="latest-badge">{{ t('settings.upToDate') }}</span>
           </div>
           
           <div v-else-if="updateState === 'error'" class="update-error">
-            <span class="error-text">检查更新失败</span>
-            <button class="btn-retry" @click="checkForUpdate">重试</button>
+            <span class="error-text">{{ t('settings.checkFailed') }}</span>
+            <button class="btn-retry" @click="checkForUpdate">{{ t('common.retry') }}</button>
           </div>
           
           <div v-else-if="updateState === 'download-error'" class="update-error">
-            <span class="error-text">下载失败: {{ errorMessage || '网络错误' }}</span>
-            <button class="btn-retry" @click="downloadUpdate">重试下载</button>
+            <span class="error-text">{{ t('settings.downloadFailed') }}: {{ errorMessage || t('settings.networkError') }}</span>
+            <button class="btn-retry" @click="downloadUpdate">{{ t('common.retry') }}</button>
           </div>
         </div>
         
         <div class="developer-info">
-          <p>开发者：<a href="#" @click.prevent="openAuthorGithub">pigWolfy</a></p>
-          <p>邮箱：happywangruifei@gmail.com</p>
+          <p>{{ t('settings.developer') }}: <a href="#" @click.prevent="openAuthorGithub">pigWolfy</a></p>
+          <p>{{ t('settings.email') }}: happywangruifei@gmail.com</p>
         </div>
         <div class="about-links">
           <a href="#" @click.prevent="openGithub">GitHub</a>
           <span>·</span>
-          <a href="#" @click.prevent="openFeedback">反馈问题</a>
+          <a href="#" @click.prevent="openFeedback">Feedback</a>
         </div>
         <p class="copyright">© 2024 Desktop Beauty Team</p>
       </div>
@@ -226,14 +238,22 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { setLocale, availableLocales, type Locale } from '../i18n'
 import { useSettingsStore } from '../stores/settings'
 import { storeToRefs } from 'pinia'
 
+const { t } = useI18n()
 const route = useRoute()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 const appVersion = ref('1.0.0')
 const aboutSection = ref<HTMLElement | null>(null)
+
+// 语言切换
+const onLanguageChange = () => {
+  setLocale(settings.value.language as Locale)
+}
 
 // 更新相关状态
 const updateState = ref<'idle' | 'available' | 'downloaded' | 'latest' | 'error' | 'download-error'>('idle')

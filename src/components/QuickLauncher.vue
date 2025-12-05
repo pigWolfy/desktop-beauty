@@ -8,18 +8,18 @@
             ref="searchInput"
             v-model="searchQuery"
             type="text"
-            placeholder="搜索应用..."
+            :placeholder="t('launcher.searchPlaceholder')"
             @input="handleSearch"
             @keydown.enter="launchFirst"
             @keydown.esc="$emit('close')"
           />
-          <span class="shortcut-hint">ESC 关闭</span>
+          <span class="shortcut-hint">{{ t('launcher.escHint') }}</span>
         </div>
 
         <div class="results-container">
           <!-- 收藏的应用 -->
           <div v-if="!searchQuery && favorites.length > 0" class="section">
-            <div class="section-title">⭐ 收藏</div>
+            <div class="section-title">{{ t('launcher.favorites') }}</div>
             <div class="app-grid">
               <div
                 v-for="app in favorites"
@@ -35,7 +35,7 @@
 
           <!-- 搜索结果 -->
           <div v-if="searchResults.length > 0" class="section">
-            <div class="section-title">{{ searchQuery ? '🔍 搜索结果' : '📋 所有应用' }}</div>
+            <div class="section-title">{{ searchQuery ? t('launcher.searchResults') : t('launcher.allApps') }}</div>
             <div class="app-list">
               <div
                 v-for="(app, index) in searchResults"
@@ -53,7 +53,7 @@
                 <button 
                   class="favorite-btn"
                   @click.stop="toggleFavorite(app)"
-                  :title="isFavorite(app) ? '取消收藏' : '添加收藏'"
+                  :title="isFavorite(app) ? t('launcher.removeFavorite') : t('launcher.addFavorite')"
                 >
                   {{ isFavorite(app) ? '⭐' : '☆' }}
                 </button>
@@ -64,7 +64,7 @@
           <!-- 空状态 -->
           <div v-if="searchQuery && searchResults.length === 0" class="empty-state">
             <span class="empty-icon">🔍</span>
-            <span class="empty-text">未找到匹配的应用</span>
+            <span class="empty-text">{{ t('launcher.noResults') }}</span>
           </div>
         </div>
       </div>
@@ -74,6 +74,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface AppInfo {
   name: string

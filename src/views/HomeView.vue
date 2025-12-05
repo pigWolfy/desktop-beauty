@@ -1,6 +1,6 @@
 <template>
   <div class="home-view">
-    <h1 class="page-title">欢迎使用 Desktop Beauty ✨</h1>
+    <h1 class="page-title">{{ t('home.welcome') }}</h1>
     
     <!-- 消息提示 -->
     <transition name="fade">
@@ -12,30 +12,30 @@
     <div class="grid grid-2 gap-lg">
       <!-- 快速操作 -->
       <div class="card quick-actions">
-        <h3 class="section-title">🚀 快速操作</h3>
+        <h3 class="section-title">{{ t('home.quickActions') }}</h3>
         <div class="action-grid">
           <button class="action-btn" @click="organizeDesktop" :disabled="isLoading">
             <span class="action-icon">📁</span>
-            <span class="action-text">整理桌面</span>
+            <span class="action-text">{{ t('home.organizeDesktop') }}</span>
           </button>
           <button class="action-btn" @click="toggleIcons" :disabled="isLoading">
             <span class="action-icon">{{ iconsHidden ? '👁️' : '🙈' }}</span>
-            <span class="action-text">{{ iconsHidden ? '显示图标' : '隐藏图标' }}</span>
+            <span class="action-text">{{ iconsHidden ? t('home.showIcons') : t('home.hideIcons') }}</span>
           </button>
           <button class="action-btn" @click="changeWallpaper" :disabled="isLoading">
             <span class="action-icon">🖼️</span>
-            <span class="action-text">切换壁纸</span>
+            <span class="action-text">{{ t('home.changeWallpaper') }}</span>
           </button>
           <button class="action-btn" @click="openLauncher" :disabled="isLoading">
             <span class="action-icon">⚡</span>
-            <span class="action-text">快速启动</span>
+            <span class="action-text">{{ t('home.quickLaunch') }}</span>
           </button>
         </div>
       </div>
 
       <!-- 系统状态 -->
       <div class="card system-status">
-        <h3 class="section-title">📊 系统状态</h3>
+        <h3 class="section-title">{{ t('home.systemStatus') }}</h3>
         <!-- 加载状态 -->
         <div v-if="isLoadingStats" class="status-loading">
           <div class="status-skeleton" v-for="i in 3" :key="i">
@@ -50,7 +50,7 @@
         <div v-else class="status-grid">
           <div class="status-item">
             <div class="status-header">
-              <span>CPU</span>
+              <span>{{ t('home.cpu') }}</span>
               <span class="status-value">{{ cpuUsage }}%</span>
             </div>
             <div class="progress-bar">
@@ -59,7 +59,7 @@
           </div>
           <div class="status-item">
             <div class="status-header">
-              <span>内存</span>
+              <span>{{ t('home.memory') }}</span>
               <span class="status-value">{{ memoryUsage }}%</span>
             </div>
             <div class="progress-bar">
@@ -71,7 +71,7 @@
             <div class="status-header clickable" @click="diskExpanded = !diskExpanded">
               <span class="disk-toggle">
                 <span class="toggle-icon" :class="{ expanded: diskExpanded }">▶</span>
-                磁盘
+                {{ t('home.disk') }}
               </span>
               <span class="status-value">{{ totalDiskUsage }}%</span>
             </div>
@@ -121,42 +121,42 @@
 
     <!-- 功能介绍 -->
     <div class="features-section mt-lg">
-      <h3 class="section-title">✨ 功能特色</h3>
+      <h3 class="section-title">{{ t('home.features') }}</h3>
       <div class="grid grid-4 gap-md">
         <router-link to="/desktop" class="feature-card">
           <span class="feature-icon">🖥️</span>
-          <h4>桌面管理</h4>
-          <p>自动整理桌面图标，按类型分组归类</p>
+          <h4>{{ t('home.featureDesktop') }}</h4>
+          <p>{{ t('home.featureDesktopDesc') }}</p>
         </router-link>
         <router-link to="/wallpaper" class="feature-card">
           <span class="feature-icon">🖼️</span>
-          <h4>壁纸管理</h4>
-          <p>管理壁纸收藏，支持自动轮换</p>
+          <h4>{{ t('home.featureWallpaper') }}</h4>
+          <p>{{ t('home.featureWallpaperDesc') }}</p>
         </router-link>
         <router-link to="/apps" class="feature-card">
           <span class="feature-icon">🚀</span>
-          <h4>快捷启动</h4>
-          <p>快速搜索并启动应用程序</p>
+          <h4>{{ t('home.featureLauncher') }}</h4>
+          <p>{{ t('home.featureLauncherDesc') }}</p>
         </router-link>
         <router-link to="/monitor" class="feature-card">
           <span class="feature-icon">📊</span>
-          <h4>系统监控</h4>
-          <p>实时监控系统资源使用情况</p>
+          <h4>{{ t('home.featureMonitor') }}</h4>
+          <p>{{ t('home.featureMonitorDesc') }}</p>
         </router-link>
       </div>
     </div>
 
     <!-- 快捷键提示 -->
     <div class="shortcuts-section mt-lg">
-      <h3 class="section-title">⌨️ 快捷键</h3>
+      <h3 class="section-title">{{ t('home.shortcuts') }}</h3>
       <div class="shortcuts-list">
         <div class="shortcut-item">
           <kbd>Alt + D</kbd>
-          <span>显示/隐藏主窗口</span>
+          <span>{{ t('home.shortcutShowHide') }}</span>
         </div>
         <div class="shortcut-item">
           <kbd>Alt + Space</kbd>
-          <span>打开快捷启动器</span>
+          <span>{{ t('home.shortcutLauncher') }}</span>
         </div>
       </div>
     </div>
@@ -165,6 +165,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const cpuUsage = ref(0)
 const memoryUsage = ref(0)
@@ -243,7 +246,7 @@ const updateStats = async () => {
 const organizeDesktop = async () => {
   if (isLoading.value) return
   isLoading.value = true
-  showMessage('正在整理桌面...')
+  showMessage(t('home.organizing'))
   try {
     const result = await window.electronAPI?.organizeDesktop({ groupBy: 'type' })
     if (result) {
@@ -255,11 +258,11 @@ const organizeDesktop = async () => {
         window.electronAPI?.trackFeature('Desktop', 'Organize', { method: 'quick_action', success: false })
       }
     } else {
-      showMessage('❌ 整理桌面失败')
+      showMessage(`❌ ${t('home.organizeFailed')}`)
     }
   } catch (error) {
-    console.error('整理桌面错误:', error)
-    showMessage('❌ 发生错误: ' + error)
+    console.error('Organize desktop error:', error)
+    showMessage(`❌ ${t('home.errorOccurred')}: ` + error)
     window.electronAPI?.trackError('DesktopOrganize', String(error), 'medium', 'HomeView')
   } finally {
     isLoading.value = false
@@ -269,8 +272,8 @@ const organizeDesktop = async () => {
 const toggleIcons = async () => {
   if (isLoading.value) return
   isLoading.value = true
-  const action = iconsHidden.value ? '显示' : '隐藏'
-  showMessage(`正在${action}图标...`)
+  const actionKey = iconsHidden.value ? t('home.showIcons') : t('home.hideIcons')
+  showMessage(t('home.togglingIcons', { action: actionKey }))
   
   try {
     let result: boolean
@@ -281,14 +284,14 @@ const toggleIcons = async () => {
     }
     if (result) {
       iconsHidden.value = !iconsHidden.value
-      showMessage(`✅ 图标已${action}`)
+      showMessage(`✅ ${iconsHidden.value ? t('home.iconsHidden') : t('home.iconsShown')}`)
       window.electronAPI?.trackFeature('Desktop', 'ToggleIcons', { hidden: !iconsHidden.value })
     } else {
-      showMessage('❌ 操作失败')
+      showMessage(`❌ ${t('home.operationFailed')}`)
     }
   } catch (error) {
-    console.error('切换图标错误:', error)
-    showMessage('❌ 发生错误: ' + error)
+    console.error('Toggle icons error:', error)
+    showMessage(`❌ ${t('home.errorOccurred')}: ` + error)
     window.electronAPI?.trackError('ToggleIcons', String(error), 'low', 'HomeView')
   } finally {
     isLoading.value = false
@@ -301,20 +304,20 @@ const checkIconsState = async () => {
     const hidden = await window.electronAPI?.getIconsHiddenState()
     iconsHidden.value = hidden || false
   } catch (error) {
-    console.error('获取图标状态失败:', error)
+    console.error('Get icons state error:', error)
   }
 }
 
 const changeWallpaper = async () => {
-  showMessage('正在选择壁纸...')
+  showMessage(t('home.selectingWallpaper'))
   try {
     const result = await window.electronAPI?.addWallpaper()
     if (result) {
-      showMessage('✅ 壁纸已添加')
+      showMessage(`✅ ${t('home.wallpaperAdded')}`)
     }
   } catch (error) {
-    console.error('切换壁纸错误:', error)
-    showMessage('❌ 发生错误')
+    console.error('Change wallpaper error:', error)
+    showMessage(`❌ ${t('home.errorOccurred')}`)
   }
 }
 

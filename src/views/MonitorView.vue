@@ -1,10 +1,10 @@
 <template>
   <div class="monitor-view">
-    <h1 class="page-title">系统监控 📊</h1>
+    <h1 class="page-title">{{ t('monitor.title') }}</h1>
 
     <!-- 系统信息概览 -->
     <div class="info-section">
-      <h3 class="section-title">💻 系统信息</h3>
+      <h3 class="section-title">{{ t('monitor.systemInfo') }}</h3>
       <div class="grid grid-4 gap-md">
         <!-- 加载状态骨架屏 -->
         <template v-if="isLoadingInfo">
@@ -21,28 +21,28 @@
           <div class="info-card">
             <span class="info-icon">🖥️</span>
             <div class="info-content">
-              <span class="info-label">操作系统</span>
+              <span class="info-label">{{ t('monitor.os') }}</span>
               <span class="info-value">{{ systemInfo.os?.distro || '-' }}</span>
             </div>
           </div>
           <div class="info-card">
             <span class="info-icon">⚙️</span>
             <div class="info-content">
-              <span class="info-label">处理器</span>
+              <span class="info-label">{{ t('monitor.processor') }}</span>
               <span class="info-value">{{ systemInfo.cpu?.brand || '-' }}</span>
             </div>
           </div>
           <div class="info-card">
             <span class="info-icon">📊</span>
             <div class="info-content">
-              <span class="info-label">内存</span>
+              <span class="info-label">{{ t('monitor.memory') }}</span>
               <span class="info-value">{{ formatBytes(systemInfo.memory?.total) }}</span>
             </div>
           </div>
           <div class="info-card">
             <span class="info-icon">🎮</span>
             <div class="info-content">
-              <span class="info-label">显卡</span>
+              <span class="info-label">{{ t('monitor.gpu') }}</span>
               <span class="info-value">{{ systemInfo.graphics?.controllers?.[0]?.model || '-' }}</span>
             </div>
           </div>
@@ -52,7 +52,7 @@
 
     <!-- 实时监控 -->
     <div class="monitor-section mt-lg">
-      <h3 class="section-title">📈 实时监控</h3>
+      <h3 class="section-title">{{ t('monitor.realTimeMonitor') }}</h3>
       <div class="grid grid-2 gap-lg">
         <!-- 加载状态骨架屏 -->
         <template v-if="isLoadingMonitor">
@@ -89,7 +89,7 @@
           <!-- CPU 使用率 -->
           <div class="monitor-card card">
             <div class="monitor-header">
-              <span class="monitor-title">CPU 使用率</span>
+              <span class="monitor-title">{{ t('monitor.cpuUsage') }}</span>
               <span class="monitor-value" :class="getCpuClass(cpuUsage.currentLoad)">
                 {{ cpuUsage.currentLoad?.toFixed(1) || 0 }}%
               </span>
@@ -105,12 +105,12 @@
             <div class="cpu-stats">
               <div class="cpu-stat-item">
                 <span class="stat-icon">⚡</span>
-                <span class="stat-label">频率</span>
+                <span class="stat-label">{{ t('monitor.currentFreq') }}</span>
                 <span class="stat-value">{{ cpuUsage.speed?.toFixed(2) || '-' }} GHz</span>
               </div>
               <div class="cpu-stat-item" v-if="cpuUsage.speedMin">
                 <span class="stat-icon">📉</span>
-                <span class="stat-label">基频</span>
+                <span class="stat-label">{{ t('monitor.baseFreq') }}</span>
                 <span class="stat-value">{{ cpuUsage.speedMin?.toFixed(2) }} GHz</span>
               </div>
             </div>
@@ -121,7 +121,7 @@
               :key="index" 
               class="core-item"
             >
-              <span class="core-label">核心 {{ index + 1 }}</span>
+              <span class="core-label">{{ t('monitor.cores') }} {{ index + 1 }}</span>
               <div class="core-bar">
                 <div class="core-fill" :style="{ width: core + '%' }"></div>
               </div>
@@ -133,7 +133,7 @@
         <!-- 内存使用率 -->
         <div class="monitor-card card">
           <div class="monitor-header">
-            <span class="monitor-title">内存使用率</span>
+            <span class="monitor-title">{{ t('monitor.memoryUsage') }}</span>
             <span class="monitor-value" :class="getMemoryClass(memoryUsage.usedPercent)">
               {{ memoryUsage.usedPercent?.toFixed(1) || 0 }}%
             </span>
@@ -146,15 +146,15 @@
           </div>
           <div class="memory-details">
             <div class="memory-item">
-              <span class="label">已使用</span>
+              <span class="label">{{ t('monitor.used') }}</span>
               <span class="value">{{ formatBytes(memoryUsage.used) }}</span>
             </div>
             <div class="memory-item">
-              <span class="label">可用</span>
+              <span class="label">{{ t('monitor.available') }}</span>
               <span class="value">{{ formatBytes(memoryUsage.free) }}</span>
             </div>
             <div class="memory-item">
-              <span class="label">总计</span>
+              <span class="label">{{ t('monitor.total') }}</span>
               <span class="value">{{ formatBytes(memoryUsage.total) }}</span>
             </div>
           </div>
@@ -165,7 +165,7 @@
 
     <!-- 磁盘使用 -->
     <div class="disk-section mt-lg">
-      <h3 class="section-title">💾 磁盘使用</h3>
+      <h3 class="section-title">{{ t('monitor.diskInfo') }}</h3>
       <div class="disk-list">
         <div 
           v-for="disk in diskUsage.devices" 
@@ -196,7 +196,7 @@
 
     <!-- 网络状态 -->
     <div class="network-section mt-lg">
-      <h3 class="section-title">🌐 网络状态</h3>
+      <h3 class="section-title">{{ t('monitor.networkInfo') }}</h3>
       <div class="network-grid">
         <div 
           v-for="iface in networkStats.interfaces?.filter(i => i.ip4)" 
@@ -210,18 +210,18 @@
           <div class="network-stats">
             <div class="stat-item">
               <span class="stat-icon">⬇️</span>
-              <span class="stat-label">下载</span>
+              <span class="stat-label">{{ t('monitor.download') }}</span>
               <span class="stat-value">{{ formatSpeed(iface.rxSpeed) }}/s</span>
             </div>
             <div class="stat-item">
               <span class="stat-icon">⬆️</span>
-              <span class="stat-label">上传</span>
+              <span class="stat-label">{{ t('monitor.upload') }}</span>
               <span class="stat-value">{{ formatSpeed(iface.txSpeed) }}/s</span>
             </div>
           </div>
           <div class="network-total">
-            <span>总下载: {{ formatBytes(iface.rxBytes) }}</span>
-            <span>总上传: {{ formatBytes(iface.txBytes) }}</span>
+            <span>{{ t('monitor.received') }}: {{ formatBytes(iface.rxBytes) }}</span>
+            <span>{{ t('monitor.sent') }}: {{ formatBytes(iface.txBytes) }}</span>
           </div>
         </div>
       </div>
@@ -231,6 +231,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface SystemInfo {
   os?: { platform: string; distro: string; release: string }

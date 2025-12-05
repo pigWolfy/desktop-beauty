@@ -1,19 +1,19 @@
 <template>
   <div class="widget-container">
     <div class="widget-bar">
-      <div class="drag-handle" title="按住拖动">
+      <div class="drag-handle" :title="t('widget.dragToMove')">
         <span class="drag-icon">⋮⋮</span>
       </div>
       
-      <button class="widget-btn" @click="nextWallpaper" title="切换壁纸" :disabled="isSwitching">
+      <button class="widget-btn" @click="nextWallpaper" :title="t('widget.switchWallpaper')" :disabled="isSwitching">
         <span class="icon" :class="{ 'spin': isSwitching }">🖼️</span>
       </button>
       
-      <button class="widget-btn" @click="organizeDesktop" title="整理桌面" :disabled="isOrganizing">
+      <button class="widget-btn" @click="organizeDesktop" :title="t('widget.organizeDesktop')" :disabled="isOrganizing">
         <span class="icon" :class="{ 'sweep': isOrganizing }">🧹</span>
       </button>
       
-      <button class="widget-btn" @click="openMain" title="打开主界面">
+      <button class="widget-btn" @click="openMain" :title="t('widget.openMain')">
         <span class="icon hover-bounce">🏠</span>
       </button>
     </div>
@@ -22,6 +22,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const isSwitching = ref(false)
 const isOrganizing = ref(false)
