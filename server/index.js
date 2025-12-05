@@ -18,9 +18,16 @@ const CONFIG = {
 // 简单的会话存储
 const sessions = new Map();
 
+// IP 地理位置缓存（避免重复查询）
+const geoCache = new Map();
+const GEO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时
+
 // 启用 CORS 和 JSON 解析
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// 信任代理（获取真实 IP）
+app.set('trust proxy', true);
 
 // 确保数据目录存在
 const dataDir = path.join(__dirname, 'data');
@@ -37,6 +44,51 @@ function generateToken() {
 // 获取日期字符串
 function getDateStr(date = new Date()) {
   return date.toISOString().split('T')[0];
+}
+
+// 获取客户端真实 IP
+function getClientIP(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+}
+
+// 查询 IP 地理位置（使用免费的 ip-api.com）
+async function getGeoLocation(ip) {
+  // 检查缓存
+  const cached = geoCache.get(ip);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.data;
+  }
+  
+  // 跳过本地 IP
+  if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip === 'unknown') {
+    return { country: 'Local', city: 'Local', region: 'Local' };
+  }
+  
+  try {
+    // 使用 ip-api.com 免费 API（每分钟 45 次限制）
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city&lang=zh-CN`);
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      const geoData = {
+        country: data.country || 'Unknown',
+        region: data.regionName || 'Unknown',
+        city: data.city || 'Unknown'
+      };
+      
+      // 存入缓存
+      geoCache.set(ip, { data: geoData, expiry: Date.now() + GEO_CACHE_TTL });
+      return geoData;
+    }
+  } catch (error) {
+    console.error('IP 地理位置查询失败:', error.message);
+  }
+  
+  return { country: 'Unknown', city: 'Unknown', region: 'Unknown' };
 }
 
 // 读取指定日期范围的日志
@@ -121,11 +173,18 @@ app.get('/api/auth/verify', authMiddleware, (req, res) => {
 // ==================== 遥测数据接收 ====================
 
 // 单条事件
-app.post('/api/analytics', (req, res) => {
+app.post('/api/analytics', async (req, res) => {
   try {
     const event = req.body;
+    const clientIP = getClientIP(req);
+    const geo = await getGeoLocation(clientIP);
+    
     const logEntry = JSON.stringify({
       ...event,
+      clientIP,
+      country: geo.country,
+      region: geo.region,
+      city: geo.city,
       serverTimestamp: Date.now(),
       serverTime: new Date().toISOString()
     }) + '\n';
@@ -147,20 +206,31 @@ app.post('/api/analytics', (req, res) => {
 });
 
 // 批量事件
-app.post('/api/analytics/batch', (req, res) => {
+app.post('/api/analytics/batch', async (req, res) => {
   try {
     const { events } = req.body;
     if (!Array.isArray(events) || events.length === 0) {
       return res.status(400).json({ error: 'Invalid events array' });
     }
 
+    const clientIP = getClientIP(req);
+    const geo = await getGeoLocation(clientIP);
+    
     const dateStr = getDateStr();
     const logFile = path.join(dataDir, `telemetry-${dateStr}.jsonl`);
     const serverTime = new Date().toISOString();
     const serverTimestamp = Date.now();
 
     const logEntries = events.map(event => 
-      JSON.stringify({ ...event, serverTimestamp, serverTime })
+      JSON.stringify({ 
+        ...event, 
+        clientIP,
+        country: geo.country,
+        region: geo.region,
+        city: geo.city,
+        serverTimestamp, 
+        serverTime 
+      })
     ).join('\n') + '\n';
 
     fs.appendFile(logFile, logEntries, (err) => {
@@ -583,6 +653,79 @@ app.get('/api/dashboard/systems', authMiddleware, (req, res) => {
   }
 });
 
+// 地理位置统计
+app.get('/api/dashboard/geo', authMiddleware, (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = startDate || getDateStr(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+    const end = endDate || getDateStr();
+    
+    const logs = readLogs(start, end);
+    
+    const countries = {};
+    const cities = {};
+    const userLocations = {};  // userId -> location
+    
+    for (const log of logs) {
+      // 只统计有地理信息的记录
+      if (log.country && log.country !== 'Unknown' && log.country !== 'Local') {
+        countries[log.country] = (countries[log.country] || 0) + 1;
+        
+        if (log.city && log.city !== 'Unknown') {
+          const cityKey = `${log.city}, ${log.country}`;
+          cities[cityKey] = (cities[cityKey] || 0) + 1;
+        }
+        
+        // 记录每个用户的位置（取最后一次）
+        if (log.userId) {
+          userLocations[log.userId] = {
+            country: log.country,
+            region: log.region,
+            city: log.city
+          };
+        }
+      }
+    }
+    
+    // 按用户去重统计城市分布
+    const uniqueUsersByCity = {};
+    const uniqueUsersByCountry = {};
+    
+    for (const [userId, loc] of Object.entries(userLocations)) {
+      uniqueUsersByCountry[loc.country] = (uniqueUsersByCountry[loc.country] || 0) + 1;
+      
+      if (loc.city && loc.city !== 'Unknown') {
+        const cityKey = `${loc.city}, ${loc.country}`;
+        uniqueUsersByCity[cityKey] = (uniqueUsersByCity[cityKey] || 0) + 1;
+      }
+    }
+    
+    res.json({
+      // 按事件数统计
+      countriesByEvents: Object.entries(countries)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20),
+      citiesByEvents: Object.entries(cities)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 30),
+      // 按独立用户数统计
+      countriesByUsers: Object.entries(uniqueUsersByCountry)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count),
+      citiesByUsers: Object.entries(uniqueUsersByCity)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 30),
+      totalUniqueLocations: Object.keys(userLocations).length
+    });
+  } catch (error) {
+    console.error('获取地理位置统计失败:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // 实时日志流
 app.get('/api/dashboard/live', authMiddleware, (req, res) => {
   try {
@@ -599,6 +742,8 @@ app.get('/api/dashboard/live', authMiddleware, (req, res) => {
         userId: log.userId?.substring(0, 8),
         sessionId: log.sessionId?.substring(0, 8),
         appVersion: log.appVersion,
+        city: log.city || '-',
+        country: log.country || '-',
         details: log.category ? `${log.category}:${log.action}` : (log.pageName || log.errorMessage || '-')
       }))
     });
