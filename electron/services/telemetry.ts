@@ -339,6 +339,11 @@ export class TelemetryService {
       const displays = screen.getAllDisplays()
       const primaryDisplay = screen.getPrimaryDisplay()
       
+      // 计算真实物理分辨率（考虑 DPI 缩放）
+      const scaleFactor = primaryDisplay.scaleFactor || 1
+      const realWidth = Math.round(primaryDisplay.size.width * scaleFactor)
+      const realHeight = Math.round(primaryDisplay.size.height * scaleFactor)
+      
       const event: SystemInfoEvent = {
         ...this.getBaseEvent('system_info'),
         eventType: 'system_info',
@@ -347,7 +352,7 @@ export class TelemetryService {
         cpuSpeed: cpu.speed,
         totalMemory: Math.round(mem.total / (1024 * 1024 * 1024)),  // GB
         gpuModel: graphics.controllers[0]?.model || 'Unknown',
-        screenResolution: `${primaryDisplay.size.width}x${primaryDisplay.size.height}`,
+        screenResolution: `${realWidth}x${realHeight}`,
         screenCount: displays.length
       }
       this.queueEvent(event)
