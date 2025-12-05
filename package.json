@@ -1,6 +1,6 @@
 {
   "name": "desktop-beauty",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "一个优雅的桌面管理工具 - Desktop Beauty",
   "main": "dist/main/main.js",
   "repository": {

@@ -203,6 +203,11 @@
             <span class="error-text">检查更新失败</span>
             <button class="btn-retry" @click="checkForUpdate">重试</button>
           </div>
+          
+          <div v-else-if="updateState === 'download-error'" class="update-error">
+            <span class="error-text">下载失败: {{ errorMessage || '网络错误' }}</span>
+            <button class="btn-retry" @click="downloadUpdate">重试下载</button>
+          </div>
         </div>
         
         <div class="developer-info">
@@ -230,11 +235,12 @@ const { settings } = storeToRefs(settingsStore)
 const appVersion = ref('1.0.0')
 
 // 更新相关状态
-const updateState = ref<'idle' | 'available' | 'downloaded' | 'latest' | 'error'>('idle')
+const updateState = ref<'idle' | 'available' | 'downloaded' | 'latest' | 'error' | 'download-error'>('idle')
 const isCheckingUpdate = ref(false)
 const isDownloading = ref(false)
 const downloadProgress = ref(0)
 const newVersion = ref('')
+const errorMessage = ref('')
 
 // 清理函数数组
 const cleanupFns: (() => void)[] = []
@@ -293,10 +299,18 @@ const setupUpdateListeners = () => {
   })
   
   // 更新错误
-  window.electronAPI?.onUpdateError(() => {
-    isCheckingUpdate.value = false
-    isDownloading.value = false
-    updateState.value = 'error'
+  window.electronAPI?.onUpdateError((_, error) => {
+    console.error('Update error:', error)
+    errorMessage.value = typeof error === 'string' ? error : '网络连接失败'
+    
+    // 根据当前状态判断是检查失败还是下载失败
+    if (isDownloading.value) {
+      isDownloading.value = false
+      updateState.value = 'download-error'
+    } else {
+      isCheckingUpdate.value = false
+      updateState.value = 'error'
+    }
   })
 }
 
@@ -315,11 +329,14 @@ const checkForUpdate = async () => {
 const downloadUpdate = async () => {
   isDownloading.value = true
   downloadProgress.value = 0
+  errorMessage.value = ''
   try {
     await window.electronAPI?.downloadUpdate()
   } catch (e) {
     console.error('下载更新失败:', e)
     isDownloading.value = false
+    updateState.value = 'download-error'
+    errorMessage.value = '下载失败'
   }
 }
 

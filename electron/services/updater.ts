@@ -78,13 +78,16 @@ export class UpdateService {
     ipcMain.handle('download-update', async () => {
       if (this.isDev) {
         console.log('[Updater] Dev mode - download not available')
+        this.sendToWindow('update-error', '开发模式下无法下载更新')
         return null
       }
 
       try {
+        console.log('[Updater] Starting download...')
         return await autoUpdater.downloadUpdate()
       } catch (err) {
         console.error('[Updater] Download failed:', err)
+        this.sendToWindow('update-error', (err as Error).message || '下载失败')
         return null
       }
     })
