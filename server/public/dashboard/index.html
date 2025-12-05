@@ -82,6 +82,9 @@
           <button class="tab-btn px-4 py-3 font-medium whitespace-nowrap" data-tab="trends">
             <i class="fas fa-chart-area mr-2"></i>趋势
           </button>
+          <button class="tab-btn px-4 py-3 font-medium whitespace-nowrap" data-tab="users">
+            <i class="fas fa-users mr-2"></i>用户
+          </button>
           <button class="tab-btn px-4 py-3 font-medium whitespace-nowrap" data-tab="features">
             <i class="fas fa-cubes mr-2"></i>功能
           </button>
@@ -207,6 +210,76 @@
             <h3 class="text-lg font-semibold text-gray-700 mb-4"><i class="fas fa-file-alt mr-2 text-indigo-500"></i>页面访问</h3>
             <canvas id="pageViewChart" height="250"></canvas>
           </div>
+        </div>
+      </div>
+
+      <!-- Users Tab -->
+      <div id="tab-users" class="tab-content hidden fade-in">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="glass rounded-xl shadow-lg p-6 card-hover">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500">总用户数</p>
+                <p id="usersTotalUsers" class="text-3xl font-bold text-gray-800">-</p>
+              </div>
+              <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <i class="fas fa-users text-blue-500 text-xl"></i>
+              </div>
+            </div>
+          </div>
+          <div class="glass rounded-xl shadow-lg p-6 card-hover">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500">新用户 (7天)</p>
+                <p id="usersNewUsers" class="text-3xl font-bold text-green-600">-</p>
+              </div>
+              <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <i class="fas fa-user-plus text-green-500 text-xl"></i>
+              </div>
+            </div>
+          </div>
+          <div class="glass rounded-xl shadow-lg p-6 card-hover">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500">人均会话</p>
+                <p id="usersAvgSessions" class="text-3xl font-bold text-purple-600">-</p>
+              </div>
+              <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                <i class="fas fa-clock text-purple-500 text-xl"></i>
+              </div>
+            </div>
+          </div>
+          <div class="glass rounded-xl shadow-lg p-6 card-hover">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-500">人均事件</p>
+                <p id="usersAvgEvents" class="text-3xl font-bold text-orange-600">-</p>
+              </div>
+              <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                <i class="fas fa-bolt text-orange-500 text-xl"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <!-- Activity Distribution -->
+          <div class="glass rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4"><i class="fas fa-chart-pie mr-2 text-pink-500"></i>用户活跃度分布</h3>
+            <canvas id="userActivityChart" height="280"></canvas>
+          </div>
+          <!-- DAU Trend -->
+          <div class="glass rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4"><i class="fas fa-chart-line mr-2 text-blue-500"></i>日活跃用户 (DAU)</h3>
+            <canvas id="dauTrendChart" height="280"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Users Table -->
+        <div class="glass rounded-xl shadow-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-700 mb-4"><i class="fas fa-trophy mr-2 text-yellow-500"></i>活跃用户排行 (Top 20)</h3>
+          <div id="topUsersTable" class="overflow-x-auto"></div>
         </div>
       </div>
 
@@ -583,6 +656,109 @@
       hideLoading();
     }
 
+    async function loadUsers() {
+      showLoading();
+      try {
+        const data = await apiGet(`/dashboard/users?${new URLSearchParams(getDateRange())}`);
+        
+        // Update summary cards
+        document.getElementById('usersTotalUsers').textContent = data.totalUsers.toLocaleString();
+        document.getElementById('usersNewUsers').textContent = data.newUsers.toLocaleString();
+        document.getElementById('usersAvgSessions').textContent = data.avgSessionsPerUser;
+        document.getElementById('usersAvgEvents').textContent = data.avgEventsPerUser.toLocaleString();
+
+        // Activity Distribution Chart
+        destroyChart('userActivityChart');
+        charts.userActivityChart = new Chart(document.getElementById('userActivityChart'), {
+          type: 'doughnut',
+          data: {
+            labels: data.activityDistribution.map(d => d.type),
+            datasets: [{
+              data: data.activityDistribution.map(d => d.count),
+              backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'right' },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                    const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                    return `${ctx.label}: ${ctx.raw} (${pct}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        // DAU Trend Chart
+        destroyChart('dauTrendChart');
+        if (data.dauTrend && data.dauTrend.length > 0) {
+          charts.dauTrendChart = new Chart(document.getElementById('dauTrendChart'), {
+            type: 'line',
+            data: {
+              labels: data.dauTrend.map(d => d.date),
+              datasets: [{
+                label: '日活跃用户',
+                data: data.dauTrend.map(d => d.count),
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.3
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+          });
+        }
+
+        // Top Users Table
+        let usersHtml = `<table class="min-w-full text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-3 py-2 text-left">#</th>
+              <th class="px-3 py-2 text-left">用户ID</th>
+              <th class="px-3 py-2 text-right">会话数</th>
+              <th class="px-3 py-2 text-right">事件数</th>
+              <th class="px-3 py-2 text-right">功能数</th>
+              <th class="px-3 py-2 text-left">首次使用</th>
+              <th class="px-3 py-2 text-left">最后活跃</th>
+              <th class="px-3 py-2 text-left">平台</th>
+            </tr>
+          </thead>
+          <tbody>`;
+        
+        data.topUsers.forEach((user, i) => {
+          const firstSeen = new Date(user.firstSeen).toLocaleDateString();
+          const lastSeen = new Date(user.lastSeen).toLocaleDateString();
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+          
+          usersHtml += `<tr class="${i % 2 === 0 ? 'bg-gray-50' : ''} hover:bg-blue-50">
+            <td class="px-3 py-2 font-semibold">${medal}</td>
+            <td class="px-3 py-2 font-mono text-gray-600" title="${user.fullId}">${user.userId}</td>
+            <td class="px-3 py-2 text-right font-mono text-blue-600 font-semibold">${user.sessionCount}</td>
+            <td class="px-3 py-2 text-right font-mono">${user.eventCount.toLocaleString()}</td>
+            <td class="px-3 py-2 text-right">${user.featureCount}</td>
+            <td class="px-3 py-2 text-gray-500">${firstSeen}</td>
+            <td class="px-3 py-2 text-gray-500">${lastSeen}</td>
+            <td class="px-3 py-2">${user.platforms.join(', ')}</td>
+          </tr>`;
+        });
+        
+        usersHtml += '</tbody></table>';
+        document.getElementById('topUsersTable').innerHTML = usersHtml;
+
+      } catch (e) { console.error(e); }
+      hideLoading();
+    }
+
     async function loadLive() {
       if (isPaused) return;
       try {
@@ -700,6 +876,7 @@
       switch (tab) {
         case 'overview': loadOverview(); break;
         case 'trends': loadTrends(); break;
+        case 'users': loadUsers(); break;
         case 'features': loadFeatures(); break;
         case 'errors': loadErrors(); break;
         case 'systems': loadSystems(); break;

@@ -320,6 +320,136 @@ app.get('/api/dashboard/features', authMiddleware, (req, res) => {
   }
 });
 
+// 用户分析统计
+app.get('/api/dashboard/users', authMiddleware, (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const start = startDate || getDateStr(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+    const end = endDate || getDateStr();
+    
+    const logs = readLogs(start, end);
+    
+    // 用户基础信息聚合
+    const userStats = {};
+    const firstSeenDates = {};
+    
+    for (const log of logs) {
+      const userId = log.userId;
+      if (!userId) continue;
+      
+      if (!userStats[userId]) {
+        userStats[userId] = {
+          sessions: new Set(),
+          events: 0,
+          features: new Set(),
+          errors: 0,
+          firstSeen: log.serverTimestamp,
+          lastSeen: log.serverTimestamp,
+          appVersions: new Set(),
+          platforms: new Set()
+        };
+      }
+      
+      const user = userStats[userId];
+      user.events++;
+      if (log.sessionId) user.sessions.add(log.sessionId);
+      if (log.eventType === 'feature_use' && log.category) user.features.add(log.category);
+      if (log.eventType === 'error') user.errors++;
+      if (log.appVersion) user.appVersions.add(log.appVersion);
+      if (log.platform) user.platforms.add(log.platform);
+      if (log.serverTimestamp < user.firstSeen) user.firstSeen = log.serverTimestamp;
+      if (log.serverTimestamp > user.lastSeen) user.lastSeen = log.serverTimestamp;
+      
+      // 记录用户首次出现的日期
+      const date = log.serverTime?.split('T')[0];
+      if (date && (!firstSeenDates[userId] || date < firstSeenDates[userId])) {
+        firstSeenDates[userId] = date;
+      }
+    }
+    
+    // 转换为数组并计算统计
+    const users = Object.entries(userStats).map(([userId, stats]) => ({
+      userId: userId.substring(0, 8) + '...',
+      fullId: userId,
+      sessionCount: stats.sessions.size,
+      eventCount: stats.events,
+      featureCount: stats.features.size,
+      errorCount: stats.errors,
+      firstSeen: new Date(stats.firstSeen).toISOString(),
+      lastSeen: new Date(stats.lastSeen).toISOString(),
+      daysSinceFirstSeen: Math.floor((Date.now() - stats.firstSeen) / (24 * 60 * 60 * 1000)),
+      appVersions: [...stats.appVersions],
+      platforms: [...stats.platforms]
+    }));
+    
+    // 按会话数排序
+    users.sort((a, b) => b.sessionCount - a.sessionCount);
+    
+    // 新老用户分析（7天内首次出现为新用户）
+    const sevenDaysAgo = getDateStr(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    let newUsers = 0;
+    let returningUsers = 0;
+    
+    for (const [userId, firstDate] of Object.entries(firstSeenDates)) {
+      if (firstDate >= sevenDaysAgo) {
+        newUsers++;
+      } else if (userStats[userId].sessions.size > 1) {
+        returningUsers++;
+      }
+    }
+    
+    // 用户活跃度分布
+    const activityDistribution = {
+      'power': 0,      // 10+ 会话
+      'active': 0,     // 5-9 会话
+      'casual': 0,     // 2-4 会话
+      'oneTime': 0     // 1 会话
+    };
+    
+    for (const user of users) {
+      if (user.sessionCount >= 10) activityDistribution.power++;
+      else if (user.sessionCount >= 5) activityDistribution.active++;
+      else if (user.sessionCount >= 2) activityDistribution.casual++;
+      else activityDistribution.oneTime++;
+    }
+    
+    // 每日活跃用户数趋势
+    const dailyActiveUsers = {};
+    for (const log of logs) {
+      const date = log.serverTime?.split('T')[0];
+      if (!date || !log.userId) continue;
+      
+      if (!dailyActiveUsers[date]) {
+        dailyActiveUsers[date] = new Set();
+      }
+      dailyActiveUsers[date].add(log.userId);
+    }
+    
+    const dauTrend = Object.entries(dailyActiveUsers)
+      .map(([date, users]) => ({ date, count: users.size }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    res.json({
+      totalUsers: users.length,
+      newUsers,
+      returningUsers,
+      activityDistribution: [
+        { type: '重度用户 (10+)', count: activityDistribution.power },
+        { type: '活跃用户 (5-9)', count: activityDistribution.active },
+        { type: '普通用户 (2-4)', count: activityDistribution.casual },
+        { type: '一次性用户 (1)', count: activityDistribution.oneTime }
+      ],
+      topUsers: users.slice(0, 20),
+      dauTrend,
+      avgSessionsPerUser: users.length > 0 ? (users.reduce((sum, u) => sum + u.sessionCount, 0) / users.length).toFixed(1) : 0,
+      avgEventsPerUser: users.length > 0 ? Math.round(users.reduce((sum, u) => sum + u.eventCount, 0) / users.length) : 0
+    });
+  } catch (error) {
+    console.error('获取用户统计失败:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // 页面访问统计
 app.get('/api/dashboard/pages', authMiddleware, (req, res) => {
   try {
