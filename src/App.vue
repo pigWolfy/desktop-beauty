@@ -102,10 +102,10 @@ const checkForUpdate = () => {
   window.electronAPI?.checkForUpdate()
 }
 
-// 前往设置页面
+// 前往设置页面的关于部分
 const goToSettings = () => {
   showUpdateNotification.value = false
-  router.push('/settings')
+  router.push({ path: '/settings', query: { scrollTo: 'about' } })
   window.electronAPI?.trackEvent('Update', 'GoToSettings', newVersion.value)
 }
 

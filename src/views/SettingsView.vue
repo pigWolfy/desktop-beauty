@@ -165,7 +165,7 @@
     </div>
 
     <!-- 关于 -->
-    <div class="settings-section mt-lg">
+    <div class="settings-section mt-lg" ref="aboutSection">
       <h3 class="section-title">ℹ️ 关于</h3>
       <div class="about-card card">
         <div class="about-logo">✨</div>
@@ -182,16 +182,14 @@
           </div>
           
           <div v-else-if="updateState === 'available'" class="update-available">
-            <div class="update-badge">🎉 发现新版本</div>
-            <p class="new-version">v{{ newVersion }}</p>
+            <p class="update-hint">发现新版本 <span class="new-version">v{{ newVersion }}</span></p>
             <button class="btn-download" @click="downloadUpdate" :disabled="isDownloading">
-              {{ isDownloading ? `下载中 ${downloadProgress}%` : '立即下载' }}
+              {{ isDownloading ? `下载中 ${downloadProgress}%` : '立即更新' }}
             </button>
           </div>
           
           <div v-else-if="updateState === 'downloaded'" class="update-ready">
-            <div class="update-badge success">✅ 下载完成</div>
-            <p>新版本已准备就绪</p>
+            <p class="update-hint">新版本已准备就绪</p>
             <button class="btn-install" @click="installUpdate">重启并安装</button>
           </div>
           
@@ -226,13 +224,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
 import { storeToRefs } from 'pinia'
 
+const route = useRoute()
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 const appVersion = ref('1.0.0')
+const aboutSection = ref<HTMLElement | null>(null)
 
 // 更新相关状态
 const updateState = ref<'idle' | 'available' | 'downloaded' | 'latest' | 'error' | 'download-error'>('idle')
@@ -259,6 +260,12 @@ onMounted(async () => {
   
   // 监听更新事件
   setupUpdateListeners()
+  
+  // 检查是否需要滚动到关于部分
+  if (route.query.scrollTo === 'about') {
+    await nextTick()
+    aboutSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 })
 
 onUnmounted(() => {
@@ -585,24 +592,24 @@ const openAuthorGithub = () => {
     gap: 12px;
   }
 
+  .update-hint {
+    font-size: 14px;
+    color: $text-secondary;
+    
+    .new-version {
+      color: $accent-primary;
+      font-weight: 600;
+    }
+  }
+
   .update-badge {
     display: inline-block;
     padding: 4px 12px;
-    background: $accent-gradient;
+    background: linear-gradient(135deg, #10b981, #059669);
     color: white;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
-
-    &.success {
-      background: linear-gradient(135deg, #10b981, #059669);
-    }
-  }
-
-  .new-version {
-    font-size: 18px;
-    font-weight: 600;
-    color: $accent-primary;
   }
 
   .btn-download, .btn-install {

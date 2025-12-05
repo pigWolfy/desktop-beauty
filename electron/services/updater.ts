@@ -53,17 +53,17 @@ export class UpdateService {
 
     // 注册IPC监听
     ipcMain.handle('check-for-update', async () => {
-      // 开发环境下模拟检查结果
+      // 开发环境下模拟完整更新流程
       if (this.isDev) {
-        console.log('[Updater] Dev mode - simulating update check')
+        console.log('[Updater] Dev mode - simulating full update flow')
         this.sendToWindow('update-message', { type: 'checking', message: '正在检查更新...' })
         
         // 模拟网络延迟
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // 开发环境显示"已是最新版本"
-        this.sendToWindow('update-message', { type: 'not-available', message: '当前已是最新版本（开发模式）' })
-        return { updateAvailable: false, isDev: true }
+        // 模拟发现新版本
+        this.sendToWindow('update-available', { version: '9.9.9' })
+        return { updateAvailable: true, isDev: true }
       }
 
       try {
@@ -77,9 +77,17 @@ export class UpdateService {
 
     ipcMain.handle('download-update', async () => {
       if (this.isDev) {
-        console.log('[Updater] Dev mode - download not available')
-        this.sendToWindow('update-error', '开发模式下无法下载更新')
-        return null
+        console.log('[Updater] Dev mode - simulating download')
+        
+        // 模拟下载进度
+        for (let i = 0; i <= 100; i += 10) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+          this.sendToWindow('update-progress', { percent: i })
+        }
+        
+        // 模拟下载完成
+        this.sendToWindow('update-downloaded', { version: '9.9.9' })
+        return { downloaded: true, isDev: true }
       }
 
       try {
@@ -93,25 +101,35 @@ export class UpdateService {
     })
 
     ipcMain.handle('quit-and-install', () => {
-      if (!this.isDev) {
-        // 设置为静默安装，强制退出所有窗口
-        autoUpdater.autoInstallOnAppQuit = true
-        
-        // 强制退出并安装
-        // isSilent: true - 静默安装，不显示安装向导
-        // isForceRunAfter: true - 安装后自动启动应用
-        setImmediate(() => {
-          // 先关闭所有窗口
-          const { BrowserWindow } = require('electron')
-          BrowserWindow.getAllWindows().forEach((win: any) => {
-            win.removeAllListeners('close')
-            win.close()
-          })
-          
-          // 然后退出并安装
-          autoUpdater.quitAndInstall(false, true)
+      if (this.isDev) {
+        console.log('[Updater] Dev mode - simulating quit and install')
+        // 开发模式下只是提示，不真正退出
+        const { dialog } = require('electron')
+        dialog.showMessageBox({
+          type: 'info',
+          title: '开发模式',
+          message: '开发模式下不会真正安装更新\n\n在正式打包版本中，点击此按钮会：\n1. 关闭所有窗口\n2. 退出应用\n3. 启动安装程序\n4. 安装完成后自动启动新版本'
         })
+        return
       }
+      
+      // 设置为静默安装，强制退出所有窗口
+      autoUpdater.autoInstallOnAppQuit = true
+        
+      // 强制退出并安装
+      // isSilent: false - 显示安装向导
+      // isForceRunAfter: true - 安装后自动启动应用
+      setImmediate(() => {
+        // 先关闭所有窗口
+        const { BrowserWindow } = require('electron')
+        BrowserWindow.getAllWindows().forEach((win: any) => {
+          win.removeAllListeners('close')
+          win.close()
+        })
+        
+        // 然后退出并安装
+        autoUpdater.quitAndInstall(false, true)
+      })
     })
   }
 
