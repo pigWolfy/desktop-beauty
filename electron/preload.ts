@@ -2,6 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 // 暴露给渲染进程的 API
 contextBridge.exposeInMainWorld('electronAPI', {
+  // 应用信息
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+
   // 设置管理
   getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
   setAppSettings: (settings: any) => ipcRenderer.invoke('set-app-settings', settings),

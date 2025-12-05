@@ -3,9 +3,11 @@ import { BrowserWindow, ipcMain, app } from 'electron'
 
 export class UpdateService {
   private mainWindow: BrowserWindow | null = null
+  private isDev: boolean
 
   constructor(mainWindow: BrowserWindow | null) {
     this.mainWindow = mainWindow
+    this.isDev = !app.isPackaged
     this.init()
   }
 
@@ -18,9 +20,9 @@ export class UpdateService {
     autoUpdater.autoDownload = false // 默认不自动下载，让用户决定
     autoUpdater.autoInstallOnAppQuit = true
 
-    // 开发环境下调试配置（可选）
-    if (!app.isPackaged) {
-      autoUpdater.forceDevUpdateConfig = true
+    // 开发环境提示
+    if (this.isDev) {
+      console.log('[Updater] Running in development mode - update check will be simulated')
     }
 
     // 监听更新事件
@@ -37,6 +39,7 @@ export class UpdateService {
     })
 
     autoUpdater.on('error', (err) => {
+      console.error('[Updater] Error:', err.message)
       this.sendToWindow('update-error', err.message)
     })
 
@@ -49,16 +52,47 @@ export class UpdateService {
     })
 
     // 注册IPC监听
-    ipcMain.handle('check-for-update', () => {
-      autoUpdater.checkForUpdates()
+    ipcMain.handle('check-for-update', async () => {
+      // 开发环境下模拟检查结果
+      if (this.isDev) {
+        console.log('[Updater] Dev mode - simulating update check')
+        this.sendToWindow('update-message', { type: 'checking', message: '正在检查更新...' })
+        
+        // 模拟网络延迟
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // 开发环境显示"已是最新版本"
+        this.sendToWindow('update-message', { type: 'not-available', message: '当前已是最新版本（开发模式）' })
+        return { updateAvailable: false, isDev: true }
+      }
+
+      try {
+        return await autoUpdater.checkForUpdates()
+      } catch (err) {
+        console.error('[Updater] Check failed:', err)
+        this.sendToWindow('update-error', (err as Error).message)
+        return null
+      }
     })
 
-    ipcMain.handle('download-update', () => {
-      autoUpdater.downloadUpdate()
+    ipcMain.handle('download-update', async () => {
+      if (this.isDev) {
+        console.log('[Updater] Dev mode - download not available')
+        return null
+      }
+
+      try {
+        return await autoUpdater.downloadUpdate()
+      } catch (err) {
+        console.error('[Updater] Download failed:', err)
+        return null
+      }
     })
 
     ipcMain.handle('quit-and-install', () => {
-      autoUpdater.quitAndInstall()
+      if (!this.isDev) {
+        autoUpdater.quitAndInstall()
+      }
     })
   }
 

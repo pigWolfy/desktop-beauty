@@ -193,6 +193,9 @@ async function downloadAndApplyWallpaper(downloadUrl: string): Promise<string | 
 }
 
 function setupIPC() {
+  // 应用信息
+  ipcMain.handle('get-app-version', () => app.getVersion())
+
   // 设置管理
   ipcMain.handle('get-app-settings', () => settingsManager.getSettings())
   ipcMain.handle('set-app-settings', (_, settings) => {

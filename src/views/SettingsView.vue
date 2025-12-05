@@ -170,8 +170,41 @@
       <div class="about-card card">
         <div class="about-logo">✨</div>
         <h2>Desktop Beauty</h2>
-        <p class="version">版本 1.0.0</p>
+        <p class="version">版本 {{ appVersion }}</p>
         <p class="desc">一个优雅的桌面管理工具</p>
+        
+        <!-- 更新检测 -->
+        <div class="update-section">
+          <div v-if="updateState === 'idle'" class="update-check">
+            <button class="btn-update" @click="checkForUpdate" :disabled="isCheckingUpdate">
+              {{ isCheckingUpdate ? '检查中...' : '检查更新' }}
+            </button>
+          </div>
+          
+          <div v-else-if="updateState === 'available'" class="update-available">
+            <div class="update-badge">🎉 发现新版本</div>
+            <p class="new-version">v{{ newVersion }}</p>
+            <button class="btn-download" @click="downloadUpdate" :disabled="isDownloading">
+              {{ isDownloading ? `下载中 ${downloadProgress}%` : '立即下载' }}
+            </button>
+          </div>
+          
+          <div v-else-if="updateState === 'downloaded'" class="update-ready">
+            <div class="update-badge success">✅ 下载完成</div>
+            <p>新版本已准备就绪</p>
+            <button class="btn-install" @click="installUpdate">重启并安装</button>
+          </div>
+          
+          <div v-else-if="updateState === 'latest'" class="update-latest">
+            <span class="latest-badge">✓ 已是最新版本</span>
+          </div>
+          
+          <div v-else-if="updateState === 'error'" class="update-error">
+            <span class="error-text">检查更新失败</span>
+            <button class="btn-retry" @click="checkForUpdate">重试</button>
+          </div>
+        </div>
+        
         <div class="developer-info">
           <p>开发者：<a href="#" @click.prevent="openAuthorGithub">pigWolfy</a></p>
           <p>邮箱：happywangruifei@gmail.com</p>
@@ -188,16 +221,111 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { storeToRefs } from 'pinia'
 
 const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
+const appVersion = ref('1.0.0')
 
-onMounted(() => {
+// 更新相关状态
+const updateState = ref<'idle' | 'available' | 'downloaded' | 'latest' | 'error'>('idle')
+const isCheckingUpdate = ref(false)
+const isDownloading = ref(false)
+const downloadProgress = ref(0)
+const newVersion = ref('')
+
+// 清理函数数组
+const cleanupFns: (() => void)[] = []
+
+onMounted(async () => {
   settingsStore.init()
+  // 获取应用版本号
+  try {
+    const version = await window.electronAPI?.getAppVersion()
+    if (version) {
+      appVersion.value = version
+    }
+  } catch (e) {
+    console.error('获取版本号失败:', e)
+  }
+  
+  // 监听更新事件
+  setupUpdateListeners()
 })
+
+onUnmounted(() => {
+  // 清理事件监听
+  cleanupFns.forEach(fn => fn())
+})
+
+const setupUpdateListeners = () => {
+  // 更新消息
+  window.electronAPI?.onUpdateMessage((_, data) => {
+    isCheckingUpdate.value = false
+    if (data.type === 'checking') {
+      isCheckingUpdate.value = true
+    } else if (data.type === 'not-available') {
+      updateState.value = 'latest'
+      setTimeout(() => {
+        updateState.value = 'idle'
+      }, 3000)
+    }
+  })
+  
+  // 发现新版本
+  window.electronAPI?.onUpdateAvailable((_, info) => {
+    isCheckingUpdate.value = false
+    updateState.value = 'available'
+    newVersion.value = info.version
+  })
+  
+  // 下载进度
+  window.electronAPI?.onUpdateProgress((_, progress) => {
+    downloadProgress.value = Math.round(progress.percent)
+  })
+  
+  // 下载完成
+  window.electronAPI?.onUpdateDownloaded(() => {
+    isDownloading.value = false
+    updateState.value = 'downloaded'
+  })
+  
+  // 更新错误
+  window.electronAPI?.onUpdateError(() => {
+    isCheckingUpdate.value = false
+    isDownloading.value = false
+    updateState.value = 'error'
+  })
+}
+
+const checkForUpdate = async () => {
+  isCheckingUpdate.value = true
+  updateState.value = 'idle'
+  try {
+    await window.electronAPI?.checkForUpdate()
+  } catch (e) {
+    console.error('检查更新失败:', e)
+    updateState.value = 'error'
+    isCheckingUpdate.value = false
+  }
+}
+
+const downloadUpdate = async () => {
+  isDownloading.value = true
+  downloadProgress.value = 0
+  try {
+    await window.electronAPI?.downloadUpdate()
+  } catch (e) {
+    console.error('下载更新失败:', e)
+    isDownloading.value = false
+  }
+}
+
+const installUpdate = () => {
+  window.electronAPI?.quitAndInstall()
+}
 
 const openGithub = () => {
   window.electronAPI?.openExternal('https://github.com/pigWolfy/desktop-beauty')
@@ -396,6 +524,128 @@ const openAuthorGithub = () => {
     font-size: 12px;
     color: $text-muted;
     margin-top: 24px;
+  }
+
+  // 更新相关样式
+  .update-section {
+    margin: 20px 0;
+    padding: 16px 24px;
+    background: rgba($bg-secondary, 0.5);
+    border-radius: $border-radius;
+    min-width: 200px;
+  }
+
+  .update-check {
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-update {
+    padding: 8px 24px;
+    background: transparent;
+    color: $text-primary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all $transition-fast;
+
+    &:hover:not(:disabled) {
+      border-color: $accent-primary;
+      color: $accent-primary;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .update-available, .update-ready {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .update-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: $accent-gradient;
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+
+    &.success {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+  }
+
+  .new-version {
+    font-size: 18px;
+    font-weight: 600;
+    color: $accent-primary;
+  }
+
+  .btn-download, .btn-install {
+    padding: 10px 28px;
+    background: $accent-gradient;
+    color: white;
+    border: none;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all $transition-fast;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba($accent-primary, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.8;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+
+  .btn-install {
+    background: linear-gradient(135deg, #10b981, #059669);
+  }
+
+  .update-latest {
+    .latest-badge {
+      color: #10b981;
+      font-size: 14px;
+    }
+  }
+
+  .update-error {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .error-text {
+      color: #ef4444;
+      font-size: 14px;
+    }
+
+    .btn-retry {
+      padding: 6px 16px;
+      background: transparent;
+      color: $text-secondary;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      cursor: pointer;
+      font-size: 13px;
+
+      &:hover {
+        border-color: $accent-primary;
+        color: $accent-primary;
+      }
+    }
   }
 }
 </style>
