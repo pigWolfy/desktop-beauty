@@ -16,12 +16,14 @@ export const useSettingsStore = defineStore('settings', () => {
   })
 
   const initialized = ref(false)
+  let previousSettings: typeof settings.value | null = null
 
   async function init() {
     if (initialized.value) return
     if (window.electronAPI?.getAppSettings) {
       const saved = await window.electronAPI.getAppSettings()
       Object.assign(settings.value, saved)
+      previousSettings = JSON.parse(JSON.stringify(settings.value))
       
       // Apply initial state
       if (settings.value.wallpaperSlideshow) {
@@ -41,6 +43,17 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(settings, (newVal) => {
     if (initialized.value) {
       save()
+      
+      // Track setting changes for telemetry
+      if (previousSettings) {
+        const keys = Object.keys(newVal) as (keyof typeof newVal)[]
+        for (const key of keys) {
+          if (newVal[key] !== previousSettings[key]) {
+            window.electronAPI?.trackSettings(key, previousSettings[key], newVal[key])
+          }
+        }
+      }
+      previousSettings = JSON.parse(JSON.stringify(newVal))
       
       // Apply wallpaper slideshow settings
       if (newVal.wallpaperSlideshow) {

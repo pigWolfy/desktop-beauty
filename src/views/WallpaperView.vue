@@ -625,6 +625,7 @@ async function addLocalWallpaper() {
     }
   } catch (error) {
     console.error('添加壁纸失败:', error)
+    window.electronAPI?.trackError('WallpaperAdd', String(error), 'medium', 'WallpaperView')
   }
 }
 
@@ -633,9 +634,10 @@ async function setWallpaper(path: string) {
     await electronAPI.setWallpaper(path)
     currentWallpaper.value = path
     // 统计壁纸设置
-    window.electronAPI?.trackEvent('Wallpaper', 'Set', 'Local')
+    window.electronAPI?.trackFeature('Wallpaper', 'Set', { source: 'local' })
   } catch (error) {
     console.error('设置壁纸失败:', error)
+    window.electronAPI?.trackError('WallpaperSet', String(error), 'medium', 'WallpaperView')
   }
 }
 
@@ -644,6 +646,7 @@ async function removeWallpaper(path: string) {
   try {
     await electronAPI.removeWallpaper(path)
     await loadLocalWallpapers()
+    window.electronAPI?.trackFeature('Wallpaper', 'Remove', { type: 'single' })
   } catch (error) {
     console.error('删除壁纸失败:', error)
   }
@@ -657,6 +660,7 @@ async function removeAllWallpapers() {
     if (success) {
       await loadLocalWallpapers()
       currentWallpaper.value = ''
+      window.electronAPI?.trackFeature('Wallpaper', 'Remove', { type: 'all' })
     }
   } catch (error) {
     console.error('清空壁纸失败:', error)
@@ -672,8 +676,10 @@ async function toggleSlideshow() {
       await updateAutoChangeStatus()
     }
     await electronAPI.startWallpaperSlideshow(slideshowInterval.value)
+    window.electronAPI?.trackFeature('Wallpaper', 'Slideshow', { action: 'start', interval: slideshowInterval.value })
   } else {
     await electronAPI.stopWallpaperSlideshow()
+    window.electronAPI?.trackFeature('Wallpaper', 'Slideshow', { action: 'stop' })
   }
 }
 

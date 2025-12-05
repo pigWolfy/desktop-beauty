@@ -249,8 +249,10 @@ const organizeDesktop = async () => {
     if (result) {
       if (result.success) {
         showMessage(`✅ ${result.message}`)
+        window.electronAPI?.trackFeature('Desktop', 'Organize', { method: 'quick_action', success: true })
       } else {
         showMessage(`❌ ${result.message}`)
+        window.electronAPI?.trackFeature('Desktop', 'Organize', { method: 'quick_action', success: false })
       }
     } else {
       showMessage('❌ 整理桌面失败')
@@ -258,6 +260,7 @@ const organizeDesktop = async () => {
   } catch (error) {
     console.error('整理桌面错误:', error)
     showMessage('❌ 发生错误: ' + error)
+    window.electronAPI?.trackError('DesktopOrganize', String(error), 'medium', 'HomeView')
   } finally {
     isLoading.value = false
   }
@@ -279,12 +282,14 @@ const toggleIcons = async () => {
     if (result) {
       iconsHidden.value = !iconsHidden.value
       showMessage(`✅ 图标已${action}`)
+      window.electronAPI?.trackFeature('Desktop', 'ToggleIcons', { hidden: !iconsHidden.value })
     } else {
       showMessage('❌ 操作失败')
     }
   } catch (error) {
     console.error('切换图标错误:', error)
     showMessage('❌ 发生错误: ' + error)
+    window.electronAPI?.trackError('ToggleIcons', String(error), 'low', 'HomeView')
   } finally {
     isLoading.value = false
   }

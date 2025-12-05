@@ -99,8 +99,8 @@ function createWindow() {
   // 初始化更新服务
   updateService = new UpdateService(mainWindow)
 
-  // 记录应用启动
-  telemetryService.trackEvent('App', 'Start')
+  // 记录应用启动（使用增强版遥测）
+  telemetryService.trackAppStart()
 
   mainWindow.on('closed', () => {
     mainWindow = null
@@ -365,12 +365,21 @@ function setupIPC() {
   ipcMain.handle('auto-wallpaper-get-status', () => autoWallpaperService.getStatus())
   ipcMain.handle('auto-wallpaper-change-now', () => autoWallpaperService.changeWallpaper())
 
-  // 遥测相关
+  // 遥测相关（支持新旧两种 API）
   ipcMain.on('telemetry-event', (_, { category, action, label, value }) => {
     telemetryService.trackEvent(category, action, label, value)
   })
-  ipcMain.on('telemetry-page', (_, path) => {
-    telemetryService.trackPage(path)
+  ipcMain.on('telemetry-page', (_, pageName) => {
+    telemetryService.trackPage(pageName)
+  })
+  ipcMain.on('telemetry-feature', (_, { category, action, details }) => {
+    telemetryService.trackFeature(category, action, details)
+  })
+  ipcMain.on('telemetry-error', (_, { errorType, errorMessage, severity, componentName, stackTrace }) => {
+    telemetryService.trackError(errorType, errorMessage, severity, componentName, stackTrace)
+  })
+  ipcMain.on('telemetry-settings', (_, { settingName, oldValue, newValue }) => {
+    telemetryService.trackSettings(settingName, oldValue, newValue)
   })
 
   // 打开外部链接
@@ -592,6 +601,10 @@ app.on('window-all-closed', () => {
 })
 
 app.on('will-quit', () => {
+  // 记录应用退出
+  telemetryService.trackAppQuit()
+  telemetryService.flush()
+  
   globalShortcut.unregisterAll()
   systemMonitor.stopMonitoring()
   liveWallpaperManager.stop()

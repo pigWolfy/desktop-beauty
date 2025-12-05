@@ -81,10 +81,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDiskUsage: () => ipcRenderer.invoke('get-disk-usage'),
   getNetworkStats: () => ipcRenderer.invoke('get-network-stats'),
 
-  // 遥测
+  // 遥测（支持基础和增强 API）
   trackEvent: (category: string, action: string, label?: string, value?: number) => 
     ipcRenderer.send('telemetry-event', { category, action, label, value }),
-  trackPage: (path: string) => ipcRenderer.send('telemetry-page', path),
+  trackPage: (pageName: string) => ipcRenderer.send('telemetry-page', pageName),
+  trackFeature: (category: string, action: string, details?: Record<string, any>) =>
+    ipcRenderer.send('telemetry-feature', { category, action, details }),
+  trackError: (errorType: string, errorMessage: string, severity?: 'low' | 'medium' | 'high' | 'critical', componentName?: string, stackTrace?: string) =>
+    ipcRenderer.send('telemetry-error', { errorType, errorMessage, severity, componentName, stackTrace }),
+  trackSettings: (settingName: string, oldValue: any, newValue: any) =>
+    ipcRenderer.send('telemetry-settings', { settingName, oldValue, newValue }),
 
   // 更新
   checkForUpdate: () => ipcRenderer.invoke('check-for-update'),
