@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Desktop Beauty - 一个优雅的桌面管理工具，让您的 Windows 桌面更加美观、高效">
+    <meta name="keywords" content="桌面美化,壁纸管理,桌面整理,Windows工具,Desktop Beauty">
+    <title>Desktop Beauty - 优雅的桌面管理工具</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-light: #a29bfe;
+            --primary-dark: #5849c2;
+            --accent: #fd79a8;
+            --bg-dark: #0f0f23;
+            --bg-card: rgba(26, 26, 46, 0.8);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 背景动画 */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(108, 92, 231, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(253, 121, 168, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(0, 206, 201, 0.08) 0%, transparent 40%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* 导航栏 */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(15, 15, 35, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-light);
+        }
+
+        .nav-btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+        }
+
+        /* Hero 区域 */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 900px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(108, 92, 231, 0.2);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            color: var(--primary-light);
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a29bfe 50%, #fd79a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(108, 92, 231, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+        }
+
+        .hero-image {
+            margin-top: 4rem;
+            position: relative;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+
+        .hero-image::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.2), rgba(253, 121, 168, 0.2));
+            border-radius: 24px;
+            z-index: -1;
+            filter: blur(40px);
+        }
+
+        /* 功能特性 */
+        .features {
+            padding: 6rem 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(108, 92, 231, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+
+        /* 截图展示 */
+        .screenshots {
+            padding: 6rem 2rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .screenshots-slider {
+            display: flex;
+            gap: 2rem;
+            overflow-x: auto;
+            padding: 2rem 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            scroll-snap-type: x mandatory;
+        }
+
+        .screenshots-slider::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .screenshots-slider::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .screenshots-slider::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .screenshot-item {
+            flex: 0 0 auto;
+            width: 400px;
+            scroll-snap-align: center;
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .screenshot-item p {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* 下载区域 */
+        .download {
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .download-card {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .download-card h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .download-card p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .version-info {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .version-item {
+            text-align: center;
+        }
+
+        .version-item .label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .version-item .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            padding: 1.25rem 3rem;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 184, 148, 0.4);
+        }
+
+        .download-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .download-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .download-links a:hover {
+            color: var(--primary-light);
+        }
+
+        /* 系统要求 */
+        .requirements {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .requirements h4 {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .requirements ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .requirements li {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .requirements li::before {
+            content: '✓';
+            color: #00b894;
+        }
+
+        /* 页脚 */
+        footer {
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+        }
+
+        .footer-copyright {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            nav {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 6rem 1rem 2rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .screenshot-item {
+                width: 300px;
+            }
+
+            .requirements ul {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 语言切换 */
+        .lang-switch {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+
+        .lang-switch button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .lang-switch button.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .lang-switch button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 多语言内容 */
+        [data-lang="en"] { display: none; }
+        body.en [data-lang="zh"] { display: none; }
+        body.en [data-lang="en"] { display: block; }
+        body.en [data-lang="en"].inline { display: inline; }
+        body.en [data-lang="en"].flex { display: flex; }
+        body.en [data-lang="en"].inline-flex { display: inline-flex; }
+        body.en [data-lang="en"].grid { display: grid; }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+
+    <nav>
+        <a href="#" class="logo">
+            <span class="logo-icon">✨</span>
+            <span>Desktop Beauty</span>
+        </a>
+        <div class="nav-links">
+            <a href="#features" data-lang="zh">功能特性</a>
+            <a href="#features" data-lang="en">Features</a>
+            <a href="#screenshots" data-lang="zh">应用截图</a>
+            <a href="#screenshots" data-lang="en">Screenshots</a>
+            <a href="#download" data-lang="zh">下载</a>
+            <a href="#download" data-lang="en">Download</a>
+            <a href="https://github.com/pigWolfy/desktop-beauty" target="_blank">GitHub</a>
+            <div class="lang-switch">
+                <button onclick="setLang('zh')" id="lang-zh" class="active">中文</button>
+                <button onclick="setLang('en')" id="lang-en">EN</button>
+            </div>
+        </div>
+        <a href="#download" class="nav-btn" data-lang="zh">立即下载</a>
+        <a href="#download" class="nav-btn" data-lang="en">Download</a>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span>🎉</span>
+                <span data-lang="zh">v1.3.9 全新发布 - 支持中英双语</span>
+                <span data-lang="en">v1.3.9 Released - Bilingual Support</span>
+            </div>
+            <h1 data-lang="zh">让您的桌面更加优雅</h1>
+            <h1 data-lang="en">Make Your Desktop Beautiful</h1>
+            <p data-lang="zh">Desktop Beauty 是一款功能强大的 Windows 桌面管理工具，集壁纸管理、桌面整理、系统监控于一体，让您的数字生活更加高效美观。</p>
+            <p data-lang="en">Desktop Beauty is a powerful Windows desktop management tool that combines wallpaper management, desktop organization, and system monitoring to make your digital life more efficient and beautiful.</p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn btn-primary">
+                    <span>⬇️</span>
+                    <span data-lang="zh">免费下载</span>
+                    <span data-lang="en">Free Download</span>
+                </a>
+                <a href="https://github.com/pigWolfy/desktop-beauty" target="_blank" class="btn btn-secondary">
+                    <span>⭐</span>
+                    <span>GitHub</span>
+                </a>
+            </div>
+            <div class="hero-image">
+                <img src="screenshot-main.png" alt="Desktop Beauty Screenshot">
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2 data-lang="zh">✨ 功能特性</h2>
+            <h2 data-lang="en">✨ Features</h2>
+            <p data-lang="zh">专为 Windows 用户打造的全方位桌面管理解决方案</p>
+            <p data-lang="en">A comprehensive desktop management solution designed for Windows users</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🖼️</div>
+                <h3 data-lang="zh">壁纸管理</h3>
+                <h3 data-lang="en">Wallpaper Manager</h3>
+                <p data-lang="zh">支持本地壁纸管理、在线壁纸下载、动态视频壁纸，还可设置自动轮换，让桌面时刻保持新鲜感。</p>
+                <p data-lang="en">Manage local wallpapers, download online wallpapers, set video wallpapers, and enable auto-rotation to keep your desktop fresh.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📁</div>
+                <h3 data-lang="zh">桌面整理</h3>
+                <h3 data-lang="en">Desktop Organization</h3>
+                <p data-lang="zh">一键整理杂乱的桌面图标，按类型、日期自动分组，支持隐藏/显示图标，让桌面井然有序。</p>
+                <p data-lang="en">One-click organization for messy desktop icons, auto-grouping by type or date, hide/show icons to keep your desktop tidy.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 data-lang="zh">系统监控</h3>
+                <h3 data-lang="en">System Monitor</h3>
+                <p data-lang="zh">实时监控 CPU、内存、磁盘、网络使用情况，精美的可视化界面让系统状态一目了然。</p>
+                <p data-lang="en">Real-time monitoring of CPU, memory, disk, and network usage with beautiful visualization.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 data-lang="zh">CPU健康检测</h3>
+                <h3 data-lang="en">CPU Health Check</h3>
+                <p data-lang="zh">专为 Intel 13/14 代处理器设计的"缩缸"问题检测工具，帮助您及时发现潜在风险。</p>
+                <p data-lang="en">Designed for Intel 13/14 Gen processors to detect potential degradation issues and help you identify risks early.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3 data-lang="zh">快捷启动</h3>
+                <h3 data-lang="en">Quick Launcher</h3>
+                <p data-lang="zh">按 Alt+Space 快速搜索并启动应用程序，支持收藏常用应用，提升工作效率。</p>
+                <p data-lang="en">Press Alt+Space to quickly search and launch apps, with favorites support to boost productivity.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 data-lang="zh">多语言支持</h3>
+                <h3 data-lang="en">Multi-language</h3>
+                <p data-lang="zh">支持中文和英文界面，自动检测系统语言，为全球用户提供本地化体验。</p>
+                <p data-lang="en">Supports Chinese and English interfaces with auto system language detection for a localized experience.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="screenshots" id="screenshots">
+        <div class="section-header">
+            <h2 data-lang="zh">📸 应用截图</h2>
+            <h2 data-lang="en">📸 Screenshots</h2>
+            <p data-lang="zh">精心设计的用户界面，给您带来愉悦的使用体验</p>
+            <p data-lang="en">Beautifully designed interface for a delightful user experience</p>
+        </div>
+        <div class="screenshots-slider">
+            <div class="screenshot-item">
+                <img src="screenshot-home.png" alt="Home">
+                <p data-lang="zh">首页 - 快速操作与系统状态</p>
+                <p data-lang="en">Home - Quick actions & system status</p>
+            </div>
+            <div class="screenshot-item">
+                <img src="screenshot-wallpaper.png" alt="Wallpaper">
+                <p data-lang="zh">壁纸管理 - 本地与在线壁纸</p>
+                <p data-lang="en">Wallpaper - Local & online wallpapers</p>
+            </div>
+            <div class="screenshot-item">
+                <img src="screenshot-monitor.png" alt="Monitor">
+                <p data-lang="zh">系统监控 - 实时资源监控</p>
+                <p data-lang="en">Monitor - Real-time resource monitoring</p>
+            </div>
+            <div class="screenshot-item">
+                <img src="screenshot-cpu.png" alt="CPU Health">
+                <p data-lang="zh">CPU健康 - 处理器状态检测</p>
+                <p data-lang="en">CPU Health - Processor status check</p>
+            </div>
+            <div class="screenshot-item">
+                <img src="screenshot-settings.png" alt="Settings">
+                <p data-lang="zh">设置 - 个性化配置</p>
+                <p data-lang="en">Settings - Personalization options</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="download" id="download">
+        <div class="download-card">
+            <h2 data-lang="zh">🎉 立即下载</h2>
+            <h2 data-lang="en">🎉 Download Now</h2>
+            <p data-lang="zh">免费下载 Desktop Beauty，开启您的桌面美化之旅</p>
+            <p data-lang="en">Download Desktop Beauty for free and start beautifying your desktop</p>
+            
+            <div class="version-info">
+                <div class="version-item">
+                    <div class="label" data-lang="zh">当前版本</div>
+                    <div class="label" data-lang="en">Version</div>
+                    <div class="value">v1.3.9</div>
+                </div>
+                <div class="version-item">
+                    <div class="label" data-lang="zh">文件大小</div>
+                    <div class="label" data-lang="en">Size</div>
+                    <div class="value">~80 MB</div>
+                </div>
+                <div class="version-item">
+                    <div class="label" data-lang="zh">支持平台</div>
+                    <div class="label" data-lang="en">Platform</div>
+                    <div class="value">Windows</div>
+                </div>
+            </div>
+
+            <a href="https://github.com/pigWolfy/desktop-beauty/releases/latest/download/Desktop.Beauty.Setup.1.3.9.exe" class="download-btn">
+                <span>⬇️</span>
+                <span data-lang="zh">下载 Windows 版本</span>
+                <span data-lang="en">Download for Windows</span>
+            </a>
+
+            <div class="download-links">
+                <a href="https://github.com/pigWolfy/desktop-beauty/releases" target="_blank" data-lang="zh">📋 查看所有版本</a>
+                <a href="https://github.com/pigWolfy/desktop-beauty/releases" target="_blank" data-lang="en">📋 All Releases</a>
+                <a href="https://github.com/pigWolfy/desktop-beauty" target="_blank" data-lang="zh">📖 查看源代码</a>
+                <a href="https://github.com/pigWolfy/desktop-beauty" target="_blank" data-lang="en">📖 Source Code</a>
+            </div>
+
+            <div class="requirements">
+                <h4 data-lang="zh">系统要求</h4>
+                <h4 data-lang="en">System Requirements</h4>
+                <ul>
+                    <li>Windows 10 / 11 (64-bit)</li>
+                    <li data-lang="zh">4GB+ 内存</li>
+                    <li data-lang="en">4GB+ RAM</li>
+                    <li data-lang="zh">100MB 可用空间</li>
+                    <li data-lang="en">100MB free space</li>
+                    <li data-lang="zh">网络连接（可选）</li>
+                    <li data-lang="en">Internet (optional)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/pigWolfy/desktop-beauty" target="_blank">GitHub</a>
+            <a href="https://github.com/pigWolfy/desktop-beauty/issues" target="_blank" data-lang="zh">反馈问题</a>
+            <a href="https://github.com/pigWolfy/desktop-beauty/issues" target="_blank" data-lang="en">Report Issue</a>
+            <a href="https://github.com/pigWolfy" target="_blank" data-lang="zh">关于作者</a>
+            <a href="https://github.com/pigWolfy" target="_blank" data-lang="en">About Author</a>
+        </div>
+        <p class="footer-copyright">
+            © 2024-2025 Desktop Beauty. Made with ❤️ by <a href="https://github.com/pigWolfy" target="_blank" style="color: var(--primary-light);">pigWolfy</a>
+        </p>
+    </footer>
+
+    <script>
+        // 语言切换
+        function setLang(lang) {
+            if (lang === 'en') {
+                document.body.classList.add('en');
+            } else {
+                document.body.classList.remove('en');
+            }
+            document.getElementById('lang-zh').classList.toggle('active', lang === 'zh');
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            localStorage.setItem('desktop-beauty-lang', lang);
+        }
+
+        // 检测系统语言
+        function detectLang() {
+            const saved = localStorage.getItem('desktop-beauty-lang');
+            if (saved) {
+                setLang(saved);
+                return;
+            }
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (!browserLang.toLowerCase().startsWith('zh')) {
+                setLang('en');
+            }
+        }
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // 初始化
+        detectLang();
+    </script>
+</body>
+</html>
