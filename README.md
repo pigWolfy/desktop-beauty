@@ -1,10 +1,25 @@
 # 🎨 Desktop Beauty (桌面美化工具)
 
-> 一个基于 Electron + Vue 3 构建的现代化桌面美化与管理工具，致力于提供优雅、高效的 Windows 桌面体验。
+<div align="center">
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Electron](https://img.shields.io/badge/Electron-28.0-blue.svg)
-![Vue](https://img.shields.io/badge/Vue-3.4-green.svg)
+![Desktop Beauty Banner](docs/images/screenshot-main-zh.png)
+
+**让你的 Windows 桌面更加美观、高效**
+
+[![Official Website](https://img.shields.io/badge/🌐_Official_Website-desktop.ruifeis.net-6c5ce7?style=for-the-badge)](https://desktop.ruifeis.net)
+[![Download](https://img.shields.io/badge/⬇️_Download-Latest_Release-fd79a8?style=for-the-badge)](https://github.com/pigWolfy/desktop-beauty/releases/latest)
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Electron](https://img.shields.io/badge/Electron-28.0-47848F.svg?logo=electron)](https://www.electronjs.org/)
+[![Vue](https://img.shields.io/badge/Vue-3.4-4FC08D.svg?logo=vue.js)](https://vuejs.org/)
+[![GitHub Stars](https://img.shields.io/github/stars/pigWolfy/desktop-beauty?style=social)](https://github.com/pigWolfy/desktop-beauty)
+[![GitHub Downloads](https://img.shields.io/github/downloads/pigWolfy/desktop-beauty/total?color=green)](https://github.com/pigWolfy/desktop-beauty/releases)
+
+[English](#-features) | [简体中文](#-主要功能)
+
+</div>
+
+---
 
 ## ✨ 主要功能
 
@@ -36,19 +51,23 @@
 
 ## 📸 界面预览
 
-### 🏠 桌面管理 & 壁纸中心
-![Home](docs/images/home.png)
-![Wallpaper](docs/images/wallpaper.png)
+<div align="center">
 
-### 📊 系统监控 & CPU 健康
-![Monitor](docs/images/monitor.png)
-![CPU Health](docs/images/cpuhealth.png)
+| 首页 | 壁纸管理 |
+|:---:|:---:|
+| ![Home](docs/images/screenshot-home-zh.png) | ![Wallpaper](docs/images/screenshot-wallpaper-zh.png) |
 
-### ⚙️ 设置
-![Settings](docs/images/settings.png)
+| 系统监控 | CPU 健康检测 |
+|:---:|:---:|
+| ![Monitor](docs/images/screenshot-monitor-zh.png) | ![CPU Health](docs/images/screenshot-cpu-zh.png) |
 
-### 🧩 桌面小组件
-![Desktop Widget](docs/images/desktop_widget.png)
+| 设置 | 桌面小组件 |
+|:---:|:---:|
+| ![Settings](docs/images/screenshot-settings-zh.png) | ![Desktop Widget](docs/images/desktop_widget.png) |
+
+</div>
+
+> 🌐 更多截图请访问 [官方网站](https://desktop.ruifeis.net)
 
 ## 🛠️ 技术栈
 
@@ -98,3 +117,15 @@ npm run electron:build
 ## 📄 开源协议
 
 本项目采用 [MIT](./LICENSE) 协议开源。
+
+---
+
+<div align="center">
+
+**如果觉得这个项目有帮助，请给一个 ⭐ Star！**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=pigWolfy/desktop-beauty&type=Date)](https://star-history.com/#pigWolfy/desktop-beauty&Date)
+
+Made with ❤️ by [pigWolfy](https://github.com/pigWolfy)
+
+</div>
