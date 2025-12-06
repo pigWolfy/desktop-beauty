@@ -1,0 +1,102 @@
+// Mixins
+
+// 滚动条样式
+@mixin scrollbar($width: 6px, $track: transparent, $thumb: rgba(255, 255, 255, 0.2)) {
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: $track;
+    border-radius: $width;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: $thumb;
+    border-radius: $width;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// Flexbox 居中
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Flexbox 垂直居中
+@mixin flex-align-center {
+  display: flex;
+  align-items: center;
+}
+
+// Flexbox 列布局
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// 文本溢出省略
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 多行文本溢出
+@mixin text-ellipsis-multiline($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 绝对定位填充
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+// 卡片样式
+@mixin card($bg: $bg-card, $radius: $border-radius) {
+  background: $bg;
+  border-radius: $radius;
+  border: 1px solid $border-color;
+}
+
+// 玻璃效果
+@mixin glass-effect($blur: 10px, $opacity: 0.8) {
+  backdrop-filter: blur($blur);
+  background: rgba($bg-primary, $opacity);
+}
+
+// 按钮悬停效果
+@mixin button-hover {
+  transition: all $transition-fast;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// 渐变文字
+@mixin gradient-text($gradient: $accent-gradient) {
+  background: $gradient;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

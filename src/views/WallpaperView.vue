@@ -179,11 +179,11 @@
         <div class="categories">
           <button 
             v-for="category in categories" 
-            :key="category"
-            :class="['category-btn', { active: selectedCategory === category }]"
-            @click="selectCategory(category)"
+            :key="category.id"
+            :class="['category-btn', { active: selectedCategory === category.id }]"
+            @click="selectCategory(category.id)"
           >
-            {{ category }}
+            {{ t(`wallpaper.categories.${category.id}`) }}
           </button>
         </div>
 
@@ -480,7 +480,7 @@ const slideshowInterval = ref(300000)
 
 // 在线壁纸
 const onlineWallpapers = ref<WallpaperItem[]>([])
-const categories = ref<string[]>([])
+const categories = ref<{ id: string; query: string }[]>([])
 const selectedCategory = ref('')
 const searchQuery = ref('')
 const loading = ref(false)

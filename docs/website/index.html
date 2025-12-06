@@ -299,53 +299,124 @@
             color: var(--text-secondary);
         }
 
-        /* 截图展示 */
+        /* 截图轮播 */
         .screenshots {
             padding: 6rem 2rem;
             background: rgba(0, 0, 0, 0.2);
         }
 
-        .screenshots-slider {
-            display: flex;
-            gap: 2rem;
-            overflow-x: auto;
-            padding: 2rem 0;
-            max-width: 1400px;
+        .carousel {
+            position: relative;
+            max-width: 1000px;
             margin: 0 auto;
-            scroll-snap-type: x mandatory;
+            padding: 2rem 0;
         }
 
-        .screenshots-slider::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .screenshots-slider::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .screenshots-slider::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 4px;
-        }
-
-        .screenshot-item {
-            flex: 0 0 auto;
-            width: 400px;
-            scroll-snap-align: center;
-        }
-
-        .screenshot-item img {
-            width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             border: 1px solid var(--border);
         }
 
-        .screenshot-item p {
+        .carousel-slides {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            position: relative;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            display: block;
+        }
+
+        .carousel-slide .caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1.5rem;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
             text-align: center;
-            margin-top: 1rem;
-            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .carousel-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .carousel-btn.prev {
+            left: -25px;
+        }
+
+        .carousel-btn.next {
+            right: -25px;
+        }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--border);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .carousel-dot:hover {
+            background: var(--primary-light);
+        }
+
+        .carousel-dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 768px) {
+            .carousel-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            .carousel-btn.prev {
+                left: 10px;
+            }
+            .carousel-btn.next {
+                right: 10px;
+            }
         }
 
         /* 下载区域 */
@@ -573,12 +644,18 @@
 
         /* 多语言内容 */
         [data-lang="en"] { display: none; }
-        body.en [data-lang="zh"] { display: none; }
+        body.en [data-lang="zh"] { display: none !important; }
         body.en [data-lang="en"] { display: block; }
         body.en [data-lang="en"].inline { display: inline; }
         body.en [data-lang="en"].flex { display: flex; }
         body.en [data-lang="en"].inline-flex { display: inline-flex; }
         body.en [data-lang="en"].grid { display: grid; }
+        
+        /* 轮播图中的图片语言切换 */
+        .carousel-slide img[data-lang="zh"] { display: block; }
+        .carousel-slide img[data-lang="en"] { display: none; }
+        body.en .carousel-slide img[data-lang="zh"] { display: none; }
+        body.en .carousel-slide img[data-lang="en"] { display: block; }
     </style>
 </head>
 <body>
@@ -629,7 +706,8 @@
                 </a>
             </div>
             <div class="hero-image">
-                <img src="screenshot-main.png" alt="Desktop Beauty Screenshot">
+                <img data-lang="zh" src="screenshot-main-zh.png" alt="Desktop Beauty Screenshot">
+                <img data-lang="en" src="screenshot-main-en.png" alt="Desktop Beauty Screenshot">
             </div>
         </div>
     </section>
@@ -694,31 +772,59 @@
             <p data-lang="zh">精心设计的用户界面，给您带来愉悦的使用体验</p>
             <p data-lang="en">Beautifully designed interface for a delightful user experience</p>
         </div>
-        <div class="screenshots-slider">
-            <div class="screenshot-item">
-                <img src="screenshot-home.png" alt="Home">
-                <p data-lang="zh">首页 - 快速操作与系统状态</p>
-                <p data-lang="en">Home - Quick actions & system status</p>
+        <div class="carousel">
+            <div class="carousel-container">
+                <div class="carousel-slides">
+                    <div class="carousel-slide">
+                        <img data-lang="zh" src="screenshot-home-zh.png" alt="首页">
+                        <img data-lang="en" src="screenshot-home-en.png" alt="Home">
+                        <div class="caption">
+                            <span data-lang="zh">首页 - 快速操作与系统状态</span>
+                            <span data-lang="en">Home - Quick actions & system status</span>
+                        </div>
+                    </div>
+                    <div class="carousel-slide">
+                        <img data-lang="zh" src="screenshot-wallpaper-zh.png" alt="壁纸管理">
+                        <img data-lang="en" src="screenshot-wallpaper-en.png" alt="Wallpaper">
+                        <div class="caption">
+                            <span data-lang="zh">壁纸管理 - 本地与在线壁纸</span>
+                            <span data-lang="en">Wallpaper - Local & online wallpapers</span>
+                        </div>
+                    </div>
+                    <div class="carousel-slide">
+                        <img data-lang="zh" src="screenshot-monitor-zh.png" alt="系统监控">
+                        <img data-lang="en" src="screenshot-monitor-en.png" alt="Monitor">
+                        <div class="caption">
+                            <span data-lang="zh">系统监控 - 实时资源监控</span>
+                            <span data-lang="en">Monitor - Real-time resource monitoring</span>
+                        </div>
+                    </div>
+                    <div class="carousel-slide">
+                        <img data-lang="zh" src="screenshot-cpu-zh.png" alt="CPU健康">
+                        <img data-lang="en" src="screenshot-cpu-en.png" alt="CPU Health">
+                        <div class="caption">
+                            <span data-lang="zh">CPU健康 - 处理器状态检测</span>
+                            <span data-lang="en">CPU Health - Processor status check</span>
+                        </div>
+                    </div>
+                    <div class="carousel-slide">
+                        <img data-lang="zh" src="screenshot-settings-zh.png" alt="设置">
+                        <img data-lang="en" src="screenshot-settings-en.png" alt="Settings">
+                        <div class="caption">
+                            <span data-lang="zh">设置 - 个性化配置</span>
+                            <span data-lang="en">Settings - Personalization options</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="screenshot-item">
-                <img src="screenshot-wallpaper.png" alt="Wallpaper">
-                <p data-lang="zh">壁纸管理 - 本地与在线壁纸</p>
-                <p data-lang="en">Wallpaper - Local & online wallpapers</p>
-            </div>
-            <div class="screenshot-item">
-                <img src="screenshot-monitor.png" alt="Monitor">
-                <p data-lang="zh">系统监控 - 实时资源监控</p>
-                <p data-lang="en">Monitor - Real-time resource monitoring</p>
-            </div>
-            <div class="screenshot-item">
-                <img src="screenshot-cpu.png" alt="CPU Health">
-                <p data-lang="zh">CPU健康 - 处理器状态检测</p>
-                <p data-lang="en">CPU Health - Processor status check</p>
-            </div>
-            <div class="screenshot-item">
-                <img src="screenshot-settings.png" alt="Settings">
-                <p data-lang="zh">设置 - 个性化配置</p>
-                <p data-lang="en">Settings - Personalization options</p>
+            <button class="carousel-btn prev" onclick="moveSlide(-1)">❮</button>
+            <button class="carousel-btn next" onclick="moveSlide(1)">❯</button>
+            <div class="carousel-dots">
+                <button class="carousel-dot active" onclick="goToSlide(0)"></button>
+                <button class="carousel-dot" onclick="goToSlide(1)"></button>
+                <button class="carousel-dot" onclick="goToSlide(2)"></button>
+                <button class="carousel-dot" onclick="goToSlide(3)"></button>
+                <button class="carousel-dot" onclick="goToSlide(4)"></button>
             </div>
         </div>
     </section>
@@ -791,6 +897,35 @@
     </footer>
 
     <script>
+        // 轮播图
+        let currentSlide = 0;
+        const totalSlides = 5;
+
+        function moveSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = totalSlides - 1;
+            if (currentSlide >= totalSlides) currentSlide = 0;
+            updateCarousel();
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateCarousel();
+        }
+
+        function updateCarousel() {
+            const slides = document.querySelector('.carousel-slides');
+            if (slides) {
+                slides.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+            document.querySelectorAll('.carousel-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        // 自动轮播
+        setInterval(() => moveSlide(1), 5000);
+
         // 语言切换
         function setLang(lang) {
             if (lang === 'en') {

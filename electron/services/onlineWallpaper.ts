@@ -487,36 +487,25 @@ export class OnlineWallpaperService {
     return [...bing, ...wallhaven.slice(0, 12), ...picsum]
   }
 
-  async getCategories(): Promise<string[]> {
+  async getCategories(): Promise<{ id: string; query: string }[]> {
     return [
-      '自然风景',
-      '城市建筑',
-      '抽象艺术',
-      '动物世界',
-      '太空星际',
-      '极简主义',
-      '暗黑风格',
-      '动漫插画',
-      '科技数码',
-      '风景摄影'
+      { id: 'nature', query: 'nature landscape' },
+      { id: 'city', query: 'city architecture' },
+      { id: 'abstract', query: 'abstract art' },
+      { id: 'animal', query: 'animals wildlife' },
+      { id: 'space', query: 'space galaxy stars' },
+      { id: 'minimal', query: 'minimal' },
+      { id: 'dark', query: 'dark' },
+      { id: 'anime', query: 'anime' },
+      { id: 'tech', query: 'technology' },
+      { id: 'landscape', query: 'landscape photography' }
     ]
   }
 
-  async getCategoryWallpapers(category: string, page = 1): Promise<WallpaperItem[]> {
-    const categoryMap: Record<string, string> = {
-      '自然风景': 'nature landscape',
-      '城市建筑': 'city architecture',
-      '抽象艺术': 'abstract art',
-      '动物世界': 'animals wildlife',
-      '太空星际': 'space galaxy stars',
-      '极简主义': 'minimal',
-      '暗黑风格': 'dark',
-      '动漫插画': 'anime',
-      '科技数码': 'technology',
-      '风景摄影': 'landscape photography'
-    }
-
-    const query = categoryMap[category] || category
+  async getCategoryWallpapers(categoryId: string, page = 1): Promise<WallpaperItem[]> {
+    const categories = await this.getCategories()
+    const category = categories.find(c => c.id === categoryId)
+    const query = category ? category.query : categoryId
     return this.getWallhavenWallpapers({ query, page })
   }
 
