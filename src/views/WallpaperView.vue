@@ -414,10 +414,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+
+// 定时器引用
+let autoChangeStatusTimer: number | undefined
 
 // Generate tip3 HTML with links
 const getTip3Html = () => {
@@ -595,7 +598,11 @@ const previewingWallpaper = ref<WallpaperItem | null>(null)
 
 const electronAPI = (window as any).electronAPI
 
+// 标记组件是否已卸载
+let isUnmounted = false
+
 onMounted(async () => {
+  isUnmounted = false
   await loadLocalWallpapers()
   await loadCategories()
   await loadFavorites()
@@ -614,7 +621,16 @@ onMounted(async () => {
   await loadBestMatchWallpapers()
   
   // 定期更新自动更换状态
-  setInterval(updateAutoChangeStatus, 10000)
+  autoChangeStatusTimer = window.setInterval(updateAutoChangeStatus, 10000)
+})
+
+onUnmounted(() => {
+  isUnmounted = true
+  // 清理定时器
+  if (autoChangeStatusTimer) {
+    clearInterval(autoChangeStatusTimer)
+    autoChangeStatusTimer = undefined
+  }
 })
 
 // 本地壁纸方法
@@ -1190,10 +1206,13 @@ async function toggleAutoChange() {
 }
 
 async function updateAutoChangeStatus() {
+  if (isUnmounted) return
   try {
     autoChangeStatus.value = await electronAPI.autoWallpaperGetStatus()
   } catch (error) {
-    console.error('获取自动更换状态失败:', error)
+    if (!isUnmounted) {
+      console.error('获取自动更换状态失败:', error)
+    }
   }
 }
 

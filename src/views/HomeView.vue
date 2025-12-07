@@ -209,13 +209,25 @@ const showMessage = (msg: string) => {
   }, 3000)
 }
 
+// 标记组件是否已卸载，防止卸载后继续更新状态
+let isUnmounted = false
+// 标记是否有更新任务正在执行，防止重复创建任务
+let isUpdating = false
+
 const updateStats = async () => {
+  // 如果组件已卸载或者有任务正在执行，跳过
+  if (isUnmounted || isUpdating) return
+  
+  isUpdating = true
   try {
     const [cpu, memory, disk] = await Promise.all([
       window.electronAPI?.getCpuUsage(),
       window.electronAPI?.getMemoryUsage(),
       window.electronAPI?.getDiskUsage()
     ])
+    
+    // 再次检查，因为 await 期间组件可能已卸载
+    if (isUnmounted) return
     
     if (cpu) cpuUsage.value = Math.round(cpu.currentLoad)
     if (memory) memoryUsage.value = Math.round(memory.usedPercent)
@@ -238,8 +250,12 @@ const updateStats = async () => {
     }
     isLoadingStats.value = false
   } catch (e) {
-    isLoadingStats.value = false
+    if (!isUnmounted) {
+      isLoadingStats.value = false
+    }
     // 忽略错误
+  } finally {
+    isUpdating = false
   }
 }
 
@@ -327,12 +343,15 @@ const openLauncher = () => {
 }
 
 onMounted(() => {
+  isUnmounted = false
   updateStats()
   checkIconsState()  // 检查图标当前状态
-  refreshTimer = window.setInterval(updateStats, 2000)
+  // 降低刷新频率以减少 CPU 占用（从 2s 改为 3s）
+  refreshTimer = window.setInterval(updateStats, 3000)
 })
 
 onUnmounted(() => {
+  isUnmounted = true
   clearInterval(refreshTimer)
 })
 </script>

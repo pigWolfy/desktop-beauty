@@ -8,8 +8,23 @@ const execAsync = promisify(exec)
 let cachedNetworkSpeeds: Map<string, { rx: number; tx: number }> = new Map()
 let lastNetworkSpeedUpdate = 0
 
-// 获取 Windows 网络速度（使用性能计数器）
-async function getWindowsNetworkSpeeds(): Promise<Map<string, { rx: number; tx: number }>> {
+// 缓存 CPU 频率数据（PowerShell 命令很耗 CPU，需要更长的缓存时间）
+let cachedCpuSpeed: { speed: number; baseSpeed: number } | null = null
+let lastCpuSpeedUpdate = 0
+const CPU_SPEED_CACHE_MS = 3000  // 3秒缓存
+
+// 缓存硬件监控数据
+let cachedHwMonitor: { voltage?: number; temperature?: number; hwInfoRunning?: boolean } | null = null
+let lastHwMonitorUpdate = 0
+const HW_MONITOR_CACHE_MS = 5000  // 5秒缓存
+
+// 防止并发执行 PowerShell 命令的锁
+let cpuSpeedLock: Promise<{ speed: number; baseSpeed: number } | null> | null = null
+let hwMonitorLock: Promise<{ voltage?: number; temperature?: number; hwInfoRunning?: boolean } | null> | null = null
+let networkSpeedLock: Promise<Map<string, { rx: number; tx: number }>> | null = null
+
+// 内部实现：获取网络速度
+async function _getWindowsNetworkSpeedsImpl(): Promise<Map<string, { rx: number; tx: number }>> {
   const now = Date.now()
   // 缓存 500ms，避免频繁调用
   if (now - lastNetworkSpeedUpdate < 500 && cachedNetworkSpeeds.size > 0) {
@@ -55,6 +70,21 @@ async function getWindowsNetworkSpeeds(): Promise<Map<string, { rx: number; tx: 
   }
   
   return cachedNetworkSpeeds
+}
+
+// 获取 Windows 网络速度（使用锁防止并发）
+async function getWindowsNetworkSpeeds(): Promise<Map<string, { rx: number; tx: number }>> {
+  // 如果有请求正在进行，等待它完成
+  if (networkSpeedLock) {
+    return networkSpeedLock
+  }
+  
+  networkSpeedLock = _getWindowsNetworkSpeedsImpl()
+  try {
+    return await networkSpeedLock
+  } finally {
+    networkSpeedLock = null
+  }
 }
 
 // 检查 HWiNFO64 是否正在运行
@@ -116,12 +146,20 @@ async function getHWiNFOData(): Promise<{ voltage?: number; temperature?: number
   }
 }
 
-// 尝试从 Open Hardware Monitor / LibreHardwareMonitor WMI 获取传感器数据
-async function getHardwareMonitorData(): Promise<{ voltage?: number; temperature?: number; hwInfoRunning?: boolean } | null> {
+// 内部实现：获取硬件监控数据
+async function _getHardwareMonitorDataImpl(): Promise<{ voltage?: number; temperature?: number; hwInfoRunning?: boolean } | null> {
+  const now = Date.now()
+  // 使用缓存，硬件监控数据变化慢，可以缓存更长时间
+  if (cachedHwMonitor !== null && now - lastHwMonitorUpdate < HW_MONITOR_CACHE_MS) {
+    return cachedHwMonitor
+  }
+  
   // 首先尝试 HWiNFO（推荐，不会触发 Defender）
   const hwInfoResult = await getHWiNFOData()
   if (hwInfoResult && (hwInfoResult.voltage || hwInfoResult.temperature)) {
-    return hwInfoResult
+    cachedHwMonitor = hwInfoResult
+    lastHwMonitorUpdate = now
+    return cachedHwMonitor
   }
   
   // 备选：尝试外部运行的 OpenHardwareMonitor / LibreHardwareMonitor
@@ -150,20 +188,48 @@ async function getHardwareMonitorData(): Promise<{ voltage?: number; temperature
             }
           }
           
-          return Object.keys(result).length > 0 ? result : null
+          if (Object.keys(result).length > 0) {
+            cachedHwMonitor = result
+            lastHwMonitorUpdate = now
+            return cachedHwMonitor
+          }
         }
       } catch {
         continue
       }
     }
-    return null
+    // 没有找到数据，缓存 null 结果避免频繁重试
+    cachedHwMonitor = hwInfoResult  // 可能是 { hwInfoRunning: true } 或 null
+    lastHwMonitorUpdate = now
+    return cachedHwMonitor
   } catch {
-    return null
+    return cachedHwMonitor  // 返回旧缓存
   }
 }
 
-// 获取 Windows 实时 CPU 频率
-async function getWindowsRealTimeSpeed(): Promise<{ speed: number; baseSpeed: number } | null> {
+// 获取硬件监控数据（使用锁防止并发）
+async function getHardwareMonitorData(): Promise<{ voltage?: number; temperature?: number; hwInfoRunning?: boolean } | null> {
+  // 如果有请求正在进行，等待它完成
+  if (hwMonitorLock) {
+    return hwMonitorLock
+  }
+  
+  hwMonitorLock = _getHardwareMonitorDataImpl()
+  try {
+    return await hwMonitorLock
+  } finally {
+    hwMonitorLock = null
+  }
+}
+
+// 内部实现：获取 Windows 实时 CPU 频率
+async function _getWindowsRealTimeSpeedImpl(): Promise<{ speed: number; baseSpeed: number } | null> {
+  const now = Date.now()
+  // 使用缓存，避免频繁执行 PowerShell
+  if (cachedCpuSpeed && now - lastCpuSpeedUpdate < CPU_SPEED_CACHE_MS) {
+    return cachedCpuSpeed
+  }
+  
   try {
     // 使用性能计数器获取 CPU 性能百分比
     const { stdout: perfOutput } = await execAsync(
@@ -182,11 +248,28 @@ async function getWindowsRealTimeSpeed(): Promise<{ speed: number; baseSpeed: nu
     if (!isNaN(perfPercent) && !isNaN(baseSpeedMhz)) {
       const baseSpeed = baseSpeedMhz / 1000 // 转换为 GHz
       const realSpeed = (baseSpeed * perfPercent) / 100
-      return { speed: realSpeed, baseSpeed }
+      cachedCpuSpeed = { speed: realSpeed, baseSpeed }
+      lastCpuSpeedUpdate = now
+      return cachedCpuSpeed
     }
-    return null
+    return cachedCpuSpeed  // 返回旧缓存如果有
   } catch {
-    return null
+    return cachedCpuSpeed  // 返回旧缓存如果有
+  }
+}
+
+// 获取 Windows 实时 CPU 频率（使用锁防止并发）
+async function getWindowsRealTimeSpeed(): Promise<{ speed: number; baseSpeed: number } | null> {
+  // 如果有请求正在进行，等待它完成
+  if (cpuSpeedLock) {
+    return cpuSpeedLock
+  }
+  
+  cpuSpeedLock = _getWindowsRealTimeSpeedImpl()
+  try {
+    return await cpuSpeedLock
+  } finally {
+    cpuSpeedLock = null
   }
 }
 

@@ -52,10 +52,15 @@ const cpuUsage = ref(0)
 const memoryUsage = ref(0)
 
 let refreshTimer: number | undefined
+// 标记是否有更新任务正在执行，防止重复创建任务
+let isUpdating = false
 
 const updateStats = async () => {
   if (!settings.value.showSidebarStats) return
+  // 如果有任务正在执行，跳过本次
+  if (isUpdating) return
   
+  isUpdating = true
   try {
     const [cpu, memory] = await Promise.all([
       window.electronAPI?.getCpuUsage(),
@@ -66,6 +71,8 @@ const updateStats = async () => {
     if (memory) memoryUsage.value = Math.round(memory.usedPercent)
   } catch (e) {
     // 忽略错误
+  } finally {
+    isUpdating = false
   }
 }
 

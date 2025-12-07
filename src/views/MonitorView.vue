@@ -333,7 +333,16 @@ const loadSystemInfo = async () => {
   }
 }
 
+// 标记组件是否已卸载，防止卸载后继续更新状态
+let isUnmounted = false
+// 标记是否有更新任务正在执行，防止重复创建任务
+let isUpdating = false
+
 const updateMonitorData = async () => {
+  // 如果组件已卸载或者有任务正在执行，跳过
+  if (isUnmounted || isUpdating) return
+  
+  isUpdating = true
   try {
     const [cpu, memory, disk, network] = await Promise.all([
       window.electronAPI?.getCpuUsage(),
@@ -342,6 +351,9 @@ const updateMonitorData = async () => {
       window.electronAPI?.getNetworkStats()
     ])
 
+    // 再次检查，因为 await 期间组件可能已卸载
+    if (isUnmounted) return
+    
     if (cpu) Object.assign(cpuUsage, cpu)
     if (memory) Object.assign(memoryUsage, memory)
     if (disk) Object.assign(diskUsage, disk)
@@ -349,18 +361,25 @@ const updateMonitorData = async () => {
     
     isLoadingMonitor.value = false
   } catch (e) {
-    console.error('Failed to update monitor data:', e)
-    isLoadingMonitor.value = false
+    if (!isUnmounted) {
+      console.error('Failed to update monitor data:', e)
+      isLoadingMonitor.value = false
+    }
+  } finally {
+    isUpdating = false
   }
 }
 
 onMounted(async () => {
+  isUnmounted = false
   await loadSystemInfo()
   await updateMonitorData()
-  refreshTimer = window.setInterval(updateMonitorData, 1500)
+  // 降低刷新频率以减少 CPU 占用（从 1.5s 改为 2s）
+  refreshTimer = window.setInterval(updateMonitorData, 2000)
 })
 
 onUnmounted(() => {
+  isUnmounted = true
   clearInterval(refreshTimer)
 })
 </script>
